@@ -1,0 +1,1 @@
+"C:\Program Files (x86)\STMicroelectronics\Software\Flash Loader Demonstrator\STMFlashLoader.exe" -c --pn 2 --br 115200 -i STM32F4_1024K -e --sec 5 0 1 2 3 4 -p --dwp -d --a 8000000 --fn %1\%2\%2\Release\%2.hex
