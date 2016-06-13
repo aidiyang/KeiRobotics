@@ -27,11 +27,13 @@ namespace Time{
 			void setTimeout(uint16_t);
 			bool Timeout();
 			uint16_t getTimeout();
+			uint16_t getSec();
+			void PrintTime();
 			static uint16_t maxTicks;
 			bool OnWatchDog;
+			uint32_t Sec;
 
 		private:
-
 			uint16_t ticks;
 			uint16_t timeoutCount;
 			uint16_t timeoutStartTimestamp;

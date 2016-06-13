@@ -11,7 +11,7 @@ using namespace Communication;
 using namespace Math;
 using namespace Control;
 
-Com::Com(Interface interface, uint64_t addr, int index) : _interface(interface), Index(index){
+Com::Com(Interface interface, uint32_t addr, int index) : _interface(interface), Index(index){
 	switch(interface){
 		case __UART:
 			_UART = (UART*)addr;
@@ -47,39 +47,38 @@ void Communicating::ReceivePoll(){
 
 	BufferCount += Length;
 
-	for(int j = 0; j < 30; j++){
-		if(BufferCount > 0){
-			for(int i = 0; i < BufferCount; i++){
-				if(Buffer[i] == '$' && Buffer[i + 4] == '#'){
-					int tokenPos = i;
-					char ch[3] = {Buffer[i + 1], Buffer[i + 2], Buffer[i + 3]};
-					for(int k = 0; k < BufferCount - tokenPos - 5; k++){
-						Buffer[k] = Buffer[k + 5];
-					}
-					BufferCount -= 5;
-
-					int d[3];
-					d[0] = (int)ch[0] - 48;
-					for(int l = 1; l < 3; l++){
-						if(ch[l] < 0){
-							d[l] = (int)ch[l] + 255;
-						}
-						else{
-							d[l] = (int)ch[l] - 1;
-						}
-					}
-					int halfInt = (((int)d[1]) << 8) | ((int)d[2]);
-					Data = MathTools::HalfIntToFloat(halfInt);
-					Cmd = d[0];
-					Execute(Cmd, Data);
-					break;
+	if(BufferCount > 0){
+		int cutLenght = 0;
+		int startPos = -1;
+		for(int i = 0; i < BufferCount; i++){
+			if(Buffer[i] == '$' && Buffer[i + 4] == '#'){
+				int tokenPos = i;
+				if(startPos == -1){
+					startPos = tokenPos;
 				}
+				char ch[3] = {Buffer[i + 1], Buffer[i + 2], Buffer[i + 3]};
+				cutLenght += 5;
+				int d[3];
+				d[0] = (int)ch[0] - 48;
+				for(int l = 1; l < 3; l++){
+					if(ch[l] < 0){
+						d[l] = (int)ch[l] + 255;
+					}
+					else{
+						d[l] = (int)ch[l] - 1;
+					}
+				}
+				int halfInt = (((int)d[1]) << 8) | ((int)d[2]);
+				Data = MathTools::HalfIntToFloat(halfInt);
+				Cmd = d[0];
+				Execute(Cmd, Data);
 			}
 		}
-		else{
-//			BufferCount = 0;
-			break;
+
+		for(int k = 0; k < BufferCount - startPos - cutLenght; k++){
+			Buffer[k] = Buffer[k + startPos + cutLenght];
 		}
+		BufferCount -= startPos + cutLenght;
 	}
 }
 

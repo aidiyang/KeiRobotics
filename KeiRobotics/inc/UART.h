@@ -21,8 +21,9 @@ namespace Communication{
 		public:
 			class UARTConfiguration{
 				public:
-					UARTConfiguration(USART_TypeDef* UARTx, uint32_t baudrate, Configuration* tx, Configuration* rx, bool UseDMA = false);
-					USART_TypeDef* _UARTx;
+					enum UARTConfx{UARTConf1,UARTConf2,UARTConf3,UARTConf4,UARTConf5};
+					UARTConfiguration(UARTConfx UARTx, uint32_t baudrate, Configuration* tx, Configuration* rx, bool UseDMA = false);
+					UARTConfx _UARTx;
 					uint32_t _baudrate;
 					Configuration* _tx;
 					Configuration* _rx;
@@ -44,7 +45,6 @@ namespace Communication{
 //			uint32_t getBaudrate();
 
 			UARTConfiguration* Conf;
-			uint64_t mUARTxAddr;
 			char Buffer[2048];
 			char txBuffer[2048];
 			char rxBuffer[7];
@@ -52,6 +52,9 @@ namespace Communication{
 			char* pBuffer;
 			int BufferCount;
 			int AvailableLength;
+			int UARTConf;
+		private:
+			USART_TypeDef* getUARTx();
 	};
 };
 

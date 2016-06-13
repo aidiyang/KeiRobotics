@@ -74,15 +74,15 @@ void CompassUpdate(){
 }
 
 void App::ReceiveTask(Bundle* bundle){
-	App::mCommunicating1->ReceivePoll();
-	App::mCommunicating2->ReceivePoll();
-	App::mCommunicating3->ReceivePoll();
+	mCommunicating1->ReceivePoll();
+	mCommunicating2->ReceivePoll();
+	mCommunicating3->ReceivePoll();
 }
 
 void App::SendTask(Bundle* bundle){
-	App::mApp->mCommunicating1->SendPoll();
-	App::mApp->mCommunicating2->SendPoll();
-	App::mApp->mCommunicating3->SendPoll();
+	mCommunicating1->SendPoll();
+	mCommunicating2->SendPoll();
+	mCommunicating3->SendPoll();
 }
 
 void print(){
@@ -171,11 +171,10 @@ void Task50Hz(){
 
 void App::SPITest(Bundle* bundle){
 	mCommunicating2->Send(0, mTicks->getTicks());
-	printf("%d\r\n", mTicks->getTicks());
 }
 
 void App::Print(Bundle* bundle){
-	printf("App::mCommunicating3->BufferCount:%d\r\n", App::mCommunicating3->BufferCount);
+	mTicks->PrintTime();
 }
 
 void App::SPIReceive(Bundle* bundle){
@@ -205,9 +204,9 @@ App::App() : debugCount(0), arrived(false), PeriodicData(0), PeriodicCmd(0), Per
 	mUART4 = new UART(mConfig->UART4Conf1);
 	mSpi1 = new Spi(mConfig->Spi1Conf1);
 	mSpi2 = new Spi(mConfig->Spi2Conf1);
-	Com1 = new Com(Com::__UART, (uint64_t)mUART4);
-	Com2 = new Com(Com::__SPI, (uint64_t)mSpi1, 0);
-	Com3 = new Com(Com::__SPI, (uint64_t)mSpi2, 0);
+	Com1 = new Com(Com::__UART, (uint32_t)mUART4);
+	Com2 = new Com(Com::__SPI, (uint32_t)mSpi1, 0);
+	Com3 = new Com(Com::__SPI, (uint32_t)mSpi2, 0);
 	mCommunicating1 = new Communicating(Com1);
 	mCommunicating2 = new Communicating(Com2);
 	mCommunicating3 = new Communicating(Com3);
@@ -216,15 +215,15 @@ App::App() : debugCount(0), arrived(false), PeriodicData(0), PeriodicCmd(0), Per
 	mLed3 = new GPIO(mConfig->GPIO3Conf1);
 	mLed4 = new GPIO(mConfig->GPIO4Conf1);
 	printf("Started\r\n");
-	mTask->Attach(10, SendTask, "SendTask", true);
-	mTask->Attach(10, ReceiveTask, "ReceiveTask", true);
-	mLed1->Blink(mLed1, true, 100);
-	mLed2->Blink(mLed2, true, 200);
-	mLed3->Blink(mLed3, true, 300);
-	mLed4->Blink(mLed4, true, 400);
+	mTask->Attach(4, SendTask, "SendTask", true);
+	mTask->Attach(4, ReceiveTask, "ReceiveTask", true);
+	mLed1->Blink(mLed1, true, 125);
+	mLed2->Blink(mLed2, true, 250);
+	mLed3->Blink(mLed3, true, 500);
+	mLed4->Blink(mLed4, true, 1000);
 
-//	mTask->Attach(20, SPITest, "SPITest", true);
-//	mTask->Attach(100, Print, "Print", true);
+	mTask->Attach(20, SPITest, "SPITest", true);
+//	mTask->Attach(1000, Print, "Print", true);
 	mTask->Run(true);
 //
 //	mUART4 = new UART(mConfig->UART4Conf1);
@@ -264,6 +263,7 @@ App::App() : debugCount(0), arrived(false), PeriodicData(0), PeriodicCmd(0), Per
 }
 
 void HardFault_Handler(){
-	printf("HF:%s:%d\r\n", App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->TaskName.c_str(), App::mApp->debugCount);
+	printf("HF:%s:%d\r\n", App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->TaskName.c_str(), App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->duration[1] - App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->duration[0]);
+	App::mTicks->PrintTime();
 	while(true);
 }

@@ -36,9 +36,6 @@ void SPI1_IRQHandler()
 				App::mApp->mTicks->setTimeout(3);
 				while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET){
 					if(App::mApp->mTicks->Timeout()){
-						if(!App::mApp->mSpi1->Conf->IsSlave){
-							//App::mApp->mSpi1->Reset();
-						}
 						return;
 					}
 				}
@@ -78,7 +75,6 @@ void SPI2_IRQHandler()
 			}
 		}
 	}
-
 }
 
 void Spi::setSlaveTxBuffer(char* data, int length){
@@ -368,8 +364,8 @@ void Spi::Print(int index, const char* pstr, ...)
 	}
 }
 
-
 bool Spi::Transfer(int index, uint8_t data){
+	uint8_t value = 0;
 	ChipSelect(index);
 	if(!SendByte(data)){
 		return false;

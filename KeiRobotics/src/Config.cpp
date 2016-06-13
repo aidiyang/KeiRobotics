@@ -80,7 +80,7 @@ Config::Config(){
 	GPIO2Conf1 = new GPIO::GPIOConfiguration(new Configuration(GPIOD, GPIO_Pin_13), Bit_SET);
 	GPIO3Conf1 = new GPIO::GPIOConfiguration(new Configuration(GPIOD, GPIO_Pin_14), Bit_SET);
 	GPIO4Conf1 = new GPIO::GPIOConfiguration(new Configuration(GPIOD, GPIO_Pin_15), Bit_SET);
-	UART4Conf1 = new UART::UARTConfiguration(UART4, 115200, new Configuration(GPIOC, GPIO_Pin_10), new Configuration(GPIOC, GPIO_Pin_11));
+	UART4Conf1 = new UART::UARTConfiguration(UART::UARTConfiguration::UARTConf4, 115200, new Configuration(GPIOC, GPIO_Pin_10), new Configuration(GPIOC, GPIO_Pin_11));
 //
 //	mPWMConf1 = new PWM::PWMConfiguration(new Configuration(RCC_AHB1Periph_GPIOA, GPIOA, GPIO_Pin_2),
 //										  new Configuration(RCC_AHB1Periph_GPIOA, GPIOA, GPIO_Pin_3),

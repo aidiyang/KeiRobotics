@@ -35,7 +35,7 @@ namespace Communication{
 	class Com{
 		public:
 			enum Interface{__UART, __SPI, __I2C};
-			Com(Interface interface, uint64_t addr, int index = 0);
+			Com(Interface interface, uint32_t addr, int index = 0);
 			Interface _interface;
 			UART* _UART;
 			Spi* _Spi;
