@@ -6,7 +6,7 @@
  */
 
 #include <App.h>
-#include <Led.h>
+#include <GPIO.h>
 #include <Sonic.h>
 #include <Delay.h>
 #include <Configuration.h>
@@ -14,13 +14,14 @@
 #include <stm32f4xx_it.h>
 #include <stdio.h>
 
+using namespace System;
 using namespace Sensors;
 using namespace Time;
 
 int Sonic::SonicNum = 0;
 int Sonic::OverFlowCount = 0;
 
-Sonic::SonicConfiguration::SonicConfiguration(Led::LedConfiguration* trigger, Configuration* echo) : Trigger(trigger), Echo(echo){
+Sonic::SonicConfiguration::SonicConfiguration(GPIO::GPIOConfiguration* trigger, Configuration* echo) : Trigger(trigger), Echo(echo){
 }
 
 void TIM6_DAC_IRQHandler(){
@@ -308,15 +309,15 @@ Sonic::Sonic(SonicConfiguration* conf) : Conf(conf), Distance(0){
 			Echo = new ExternalInterrupt(conf->Echo, ExternalInterrupt::RISING_FALLING, SonicInterrupt16);
 			break;
 	}
-	App::mApp->mSonicTrigger[SonicNum] = Trigger = new Led(conf->Trigger);
+	App::mApp->mSonicTrigger[SonicNum] = Trigger = new GPIO(conf->Trigger);
 	App::mApp->mExti[SonicNum] = Echo;
 	SonicNum++;
 	SonicFilter = new MovingWindowAverageFilter(2);
 }
 
 void Sonic::Update(){
-	Trigger->LedControl(true);
+	Trigger->GPIOControl(true);
 	Delay::DelayUS(10);
-	Trigger->LedControl(false);
+	Trigger->GPIOControl(false);
 }
 

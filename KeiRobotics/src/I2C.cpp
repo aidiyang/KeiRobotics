@@ -21,7 +21,7 @@
 #include <App.h>
 #include <Led.h>
 
-I2C::I2CConfiguration::I2CConfiguration(I2C_TypeDef* I2Cx, Configuration* scl, uint8_t sclSource, Configuration* sda, uint8_t sdaSource, CLOCK clock) : _I2Cx(I2Cx), _scl(scl), _sclSource(sclSource), _sda(sda), _sdaSource(sdaSource), _clock(clock){
+I2C::I2CConfiguration::I2CConfiguration(I2C_TypeDef* I2Cx, Configuration* scl, Configuration* sda, CLOCK clock) : _I2Cx(I2Cx), _scl(scl), _sda(sda), _clock(clock){
 }
 
 I2C::I2C(I2CConfiguration* conf) : ErrorCount(0){
@@ -40,19 +40,30 @@ I2C::I2C(I2CConfiguration* conf) : ErrorCount(0){
     I2C_InitStruct.I2C_OwnAddress1 = 0x00;
     I2C_InitStruct.I2C_Ack = I2C_Ack_Enable;
     I2C_InitStruct.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-
+	uint8_t sclSource;
+	for(int i = 0; i < 16; i++){
+		if(conf->_scl->_pin == _BV(i)){
+			sclSource = i;
+		}
+	}
+	uint8_t sdaSource;
+	for(int i = 0; i < 16; i++){
+		if(conf->_sda->_pin == _BV(i)){
+			sdaSource = i;
+		}
+	}
 	if(conf->_I2Cx == I2C1)
 	{
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
 
 	    RCC_AHB1PeriphClockCmd(conf->_scl->_rcc, ENABLE);
 		GPIO_InitStruct.GPIO_Pin = conf->_scl->_pin;
-		GPIO_PinAFConfig(conf->_scl->_port, conf->_sclSource, GPIO_AF_I2C1);
+		GPIO_PinAFConfig(conf->_scl->_port, sclSource, GPIO_AF_I2C1);
 		GPIO_Init(conf->_scl->_port, &GPIO_InitStruct);
 
 	    RCC_AHB1PeriphClockCmd(conf->_sda->_rcc, ENABLE);
 		GPIO_InitStruct.GPIO_Pin = conf->_sda->_pin;
-		GPIO_PinAFConfig(conf->_sda->_port, conf->_sdaSource, GPIO_AF_I2C1);
+		GPIO_PinAFConfig(conf->_sda->_port, sdaSource, GPIO_AF_I2C1);
 		GPIO_Init(conf->_sda->_port, &GPIO_InitStruct);
 	}
 	else if(conf->_I2Cx == I2C2)
@@ -61,12 +72,12 @@ I2C::I2C(I2CConfiguration* conf) : ErrorCount(0){
 
 	    RCC_AHB1PeriphClockCmd(conf->_scl->_rcc, ENABLE);
 		GPIO_InitStruct.GPIO_Pin = conf->_scl->_pin;
-		GPIO_PinAFConfig(conf->_scl->_port, conf->_sclSource, GPIO_AF_I2C2);
+		GPIO_PinAFConfig(conf->_scl->_port, sclSource, GPIO_AF_I2C2);
 		GPIO_Init(conf->_scl->_port, &GPIO_InitStruct);
 
 	    RCC_AHB1PeriphClockCmd(conf->_sda->_rcc, ENABLE);
 		GPIO_InitStruct.GPIO_Pin = conf->_sda->_pin;
-		GPIO_PinAFConfig(conf->_sda->_port, conf->_sdaSource, GPIO_AF_I2C2);
+		GPIO_PinAFConfig(conf->_sda->_port, sdaSource, GPIO_AF_I2C2);
 		GPIO_Init(conf->_sda->_port, &GPIO_InitStruct);
 	}
 	I2C_Init(conf->_I2Cx, &I2C_InitStruct);

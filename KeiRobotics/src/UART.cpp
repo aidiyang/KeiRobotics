@@ -69,7 +69,7 @@ void DMA1_Stream1_IRQHandler(void)
 				break;
 			}
 		}
-		for(int i = 0; i < 4; i++){
+		for(int i = 0; i < 5; i++){
 //			App::mApp->mUART3->getBuffer()[App::mApp->mUART3->getBufferCount()] = App::mApp->mUART3->getRxBuffer()[i];
 //			App::mApp->mUART3->setBufferCount(App::mApp->mUART3->getBufferCount() + 1);
 //			if(App::mApp->mUART3->getBufferCount() == 2047){
@@ -98,7 +98,7 @@ void DMA2_Stream2_IRQHandler(void)
 				break;
 			}
 		}
-		for(int i = 0; i < 4; i++){
+		for(int i = 0; i < 5; i++){
 			App::mApp->mUART1->Buffer[App::mApp->mUART1->BufferCount++] = App::mApp->mUART1->rxBuffer[i];
 			App::mApp->mUART1->AvailableLength++;
 			if(App::mApp->mUART1->BufferCount >= 2047){
@@ -273,7 +273,7 @@ UART::UART(UARTConfiguration* conf) : UARTConf(conf->_UARTx), Conf(conf), Buffer
 
 		DMA_DeInit(DMA2_Stream2);
 
-		DMA_InitStructure.DMA_BufferSize = 4;
+		DMA_InitStructure.DMA_BufferSize = 5;
 		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
 		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
 		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
@@ -360,7 +360,7 @@ UART::UART(UARTConfiguration* conf) : UARTConf(conf->_UARTx), Conf(conf), Buffer
 
 		DMA_DeInit(DMA1_Stream1);
 
-		DMA_InitStructure.DMA_BufferSize = 4;
+		DMA_InitStructure.DMA_BufferSize = 5;
 		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
 		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
 		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;

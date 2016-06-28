@@ -34,12 +34,16 @@ TaskObj::TaskObj(uint16_t period, pTask fn, string fnName, bool isPeriodic, int 
 	printf("_BreakCout[TasksNum]:%d\r\n", _BreakCout);
 }
 
-Task::Task() : mTaskObj(0), mTicks(App::mApp->mTicks), OnWatchDog(App::mApp->mTicks->OnWatchDog), TasksNum(0), currentTaskNum(0), IsPrintTaskNum(false), KeepLoopping(true), Count(-1){
+Task::Task() : mTicks(App::mApp->mTicks), OnWatchDog(App::mApp->mTicks->OnWatchDog), TasksNum(0), currentTaskNum(0), IsPrintTaskNum(false), KeepLoopping(true), Count(-1){
 	mBundle = new Bundle();
-	mTaskObj = new TaskObj*;
 }
 
 void Task::Attach(uint16_t period, pTask fn, string fnName, bool isPeriodic, int BreakCout, bool keepLoopping){
+	if(TasksNum >= 1023){
+		printf("Cannot attach task any more!\r\n");
+		return;
+	}
+
 	mTaskObj[TasksNum] = new TaskObj(period, fn, fnName, isPeriodic, BreakCout);
 	TasksNum++;
 	KeepLoopping = keepLoopping;
@@ -87,7 +91,7 @@ void Task::Run(bool isPrintTaskNum){
 						mTaskObj[i]->duration[0] = mTicks->getTicks();
 						mTaskObj[i]->mTask(mBundle);
 						mTaskObj[i]->duration[1] = mTicks->getTicks();
-						if(!mTaskObj[i]->IsPeriodic){
+						if(!(mTaskObj[i]->IsPeriodic)){
 							if(mTaskObj[i]->_BreakCout > 0){
 								mTaskObj[i]->_BreakCout--;
 							}
@@ -95,7 +99,6 @@ void Task::Run(bool isPrintTaskNum){
 					}
 				}
 			}
-
 			for(int i = 0; i < TasksNum; i++){
 				if(!mTaskObj[i]->IsPeriodic){
 					if(mTaskObj[i]->_BreakCout == 0){

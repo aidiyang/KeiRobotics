@@ -152,7 +152,7 @@ caddr_t _sbrk(int incr) {
     }
     prev_heap_end = heap_end;
 
-char * stack = (char*) __get_MSP();
+    char * stack = (char*) __get_MSP();
      if (heap_end + incr > stack)
      {
          _write (STDERR_FILENO, "Heap and stack collision\n", 25);

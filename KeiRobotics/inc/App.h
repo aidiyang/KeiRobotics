@@ -39,6 +39,7 @@
 #include <EncoderYaw.h>
 #include <ExternalInterrupt.h>
 #include <Eigen/Eigen>
+#include <CAN.h>
 
 using namespace Time;
 using namespace Math;
@@ -120,20 +121,21 @@ namespace System{
 			GPIO* mLed3;
 			GPIO* mLed4;
 
-			Led* mSonicTrigger[16];
+			GPIO* mSonicTrigger[16];
 
-			Led* mGPIO1;
-			Led* mGPIO2;
-			Led* mGPIO3;
-			Led* mGPIO4;
-			Led* mGPIO5;
-			Led* mGPIO6;
-			Led* mGPIO7;
-			Led* mGPIO8;
+			GPIO* mGPIO1;
+			GPIO* mGPIO2;
+			GPIO* mGPIO3;
+			GPIO* mGPIO4;
+			GPIO* mGPIO5;
+			GPIO* mGPIO6;
+			GPIO* mGPIO7;
+			GPIO* mGPIO8;
 			UART* mUART1;
 			UART* mUART2;
 			UART* mUART3;
 			static UART* mUART4;
+			static CAN* mCAN1;
 			UART* mUART5;
 			static Com* Com1;
 			static Com* Com2;
@@ -203,6 +205,7 @@ namespace System{
 			int debugCount;
 			uint32_t* funcAddr;
 			uint32_t funcNum;
+			float error;
 		private:
 	};
 };

@@ -25,12 +25,10 @@ namespace Communication{
 			class I2CConfiguration{
 				public:
 					enum CLOCK{SPEED_100K = 100000, SPEED_400K = 400000};
-					I2CConfiguration(I2C_TypeDef* I2Cx, Configuration* scl, uint8_t sclSource, Configuration* sdal, uint8_t sdaSource, CLOCK clock);
+					I2CConfiguration(I2C_TypeDef* I2Cx, Configuration* scl, Configuration* sda, CLOCK clock);
 					I2C_TypeDef* _I2Cx;
 					Configuration* _scl;
 					Configuration* _sda;
-					uint8_t _sclSource;
-					uint8_t _sdaSource;
 					CLOCK _clock;
 			};
 			I2C(I2CConfiguration* conf);

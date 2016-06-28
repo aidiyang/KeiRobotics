@@ -48,8 +48,7 @@ namespace Time{
 			int Count;
 			uint16_t TasksNum;
 			static Bundle* mBundle;
-
-			TaskObj** mTaskObj;
+			TaskObj* mTaskObj[1024];
 
 		private:
 			bool KeepLoopping;

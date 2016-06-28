@@ -20,14 +20,14 @@ namespace Sensors{
 		public:
 			class SonicConfiguration{
 				public:
-					SonicConfiguration(Led::LedConfiguration* trigger, Configuration* echo);
-					Led::LedConfiguration* Trigger;
+					SonicConfiguration(GPIO::GPIOConfiguration* trigger, Configuration* echo);
+					GPIO::GPIOConfiguration* Trigger;
 					Configuration* Echo;
 			};
 			Sonic(SonicConfiguration* conf);
 			void Update();
 			SonicConfiguration* Conf;
-			Led* Trigger;
+			GPIO* Trigger;
 			ExternalInterrupt* Echo;
 			float Distance;
 			static int SonicNum;

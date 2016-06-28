@@ -44,7 +44,6 @@ void Communicating::ReceivePoll(){
 		case Com::__I2C:
 			break;
 	}
-
 	BufferCount += Length;
 
 	if(BufferCount > 0){
@@ -74,11 +73,12 @@ void Communicating::ReceivePoll(){
 				Execute(Cmd, Data);
 			}
 		}
-
-		for(int k = 0; k < BufferCount - startPos - cutLenght; k++){
-			Buffer[k] = Buffer[k + startPos + cutLenght];
+		if(startPos > -1){
+			for(int k = 0; k < BufferCount - startPos - cutLenght; k++){
+				Buffer[k] = Buffer[k + startPos + cutLenght];
+			}
+			BufferCount -= startPos + cutLenght;
 		}
-		BufferCount -= startPos + cutLenght;
 	}
 }
 
@@ -143,15 +143,18 @@ void Communicating::Execute(int cmd, float data){
 			Acknowledgement();
 			break;
 		case CMD::ROLL_KP:
-			App::mApp->mControlling->RollPid->setKp(data);
+			App::mApp->Motor1PID->setKp(data);
+//			App::mApp->mControlling->RollPid->setKp(data);
 			Acknowledgement();
 			break;
 		case CMD::ROLL_KI:
-			App::mApp->mControlling->RollPid->setKi(data);
+			App::mApp->Motor1PID->setKi(data);
+//			App::mApp->mControlling->RollPid->setKi(data);
 			Acknowledgement();
 			break;
 		case CMD::ROLL_KD:
-			App::mApp->mControlling->KdRollPid->setKd(data);
+			App::mApp->Motor1PID->setKd(data);
+//			App::mApp->mControlling->KdRollPid->setKd(data);
 			Acknowledgement();
 			break;
 		case CMD::PITCH_KP:
@@ -179,10 +182,10 @@ void Communicating::Execute(int cmd, float data){
 			Acknowledgement();
 			break;
 		case CMD::RESET_ALL:
-			App::mApp->mControlling->setStart(false);
-			App::mApp->mControlling->setStarting(false);
-			App::mApp->mControlling->setStopping(false);
-			App::mApp->mControlling->StopAllMotors();
+//			App::mApp->mControlling->setStart(false);
+//			App::mApp->mControlling->setStarting(false);
+//			App::mApp->mControlling->setStopping(false);
+//			App::mApp->mControlling->StopAllMotors();
 			if(App::mApp->mCompass != 0){
 				App::mApp->mCompass->Reset();
 			}
@@ -198,9 +201,9 @@ void Communicating::Execute(int cmd, float data){
 		//		Delay::DelayMS(2);
 	//		}
 
-			App::mApp->mControlling->RollOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0]);
-			App::mApp->mControlling->PitchOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1]);
-			App::mApp->mControlling->YawOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2]);
+//			App::mApp->mControlling->RollOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0]);
+//			App::mApp->mControlling->PitchOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1]);
+//			App::mApp->mControlling->YawOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2]);
 //			App::mApp->mControlling->Lift = 0;
 			Acknowledgement();
 			break;
@@ -648,7 +651,7 @@ void Communicating::Execute(int cmd, float data){
 }
 
 void Communicating::Acknowledgement(){
-	printf("OK\r\n");
+//	printf("OK\r\n");
 //	App::mApp->mLed1->Blink(App::mApp->mLed1, true, 100, 2);
 //	App::mApp->mLed2->Blink(App::mApp->mLed2, true, 100, 2);
 //	App::mApp->mLed3->Blink(App::mApp->mLed3, true, 100, 2);

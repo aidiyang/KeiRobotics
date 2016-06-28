@@ -18,6 +18,7 @@
 #include <Spi.h>
 #include <Sonic.h>
 #include <Encoder.h>
+#include <CAN.h>
 
 using namespace Debug;
 using namespace Communication;
@@ -29,40 +30,44 @@ namespace System{
 	class Config{
 		public:
 			Config();
+
+			CANConfiguration* CAN1Conf1;
+			CANConfiguration* CAN1Conf2;
+
 			Encoder::EncoderConfiguration* Encoder1Conf1;
 			Encoder::EncoderConfiguration* Encoder2Conf1;
 			Encoder::EncoderConfiguration* Encoder3Conf1;
 			Encoder::EncoderConfiguration* Encoder4Conf1;
 			Encoder::EncoderConfiguration* Encoder5Conf1;
 			Encoder::EncoderConfiguration* Encoder6Conf1;
-			Led::LedConfiguration* LedConf1;
-			Led::LedConfiguration* LedConf2;
-			Led::LedConfiguration* LedConf3;
-			Led::LedConfiguration* LedConf4;
-			Led::LedConfiguration* LedConf5;
-			Led::LedConfiguration* LedConf6;
-			Led::LedConfiguration* LedConf7;
-			Led::LedConfiguration* LedConf8;
-			Led::LedConfiguration* LedConf9;
-			Led::LedConfiguration* LedConf10;
-			Led::LedConfiguration* LedConf11;
-			Led::LedConfiguration* LedConf12;
-			Led::LedConfiguration* LedConf13;
-			Led::LedConfiguration* LedConf14;
-			Led::LedConfiguration* LedConf15;
-			Led::LedConfiguration* LedConf16;
-			Led::LedConfiguration* LedConf17;
-			Led::LedConfiguration* LedConf18;
-			Led::LedConfiguration* LedConf19;
-			Led::LedConfiguration* LedConf20;
+			GPIO::GPIOConfiguration* LedConf1;
+			GPIO::GPIOConfiguration* LedConf2;
+			GPIO::GPIOConfiguration* LedConf3;
+			GPIO::GPIOConfiguration* LedConf4;
+			GPIO::GPIOConfiguration* LedConf5;
+			GPIO::GPIOConfiguration* LedConf6;
+			GPIO::GPIOConfiguration* LedConf7;
+			GPIO::GPIOConfiguration* LedConf8;
+			GPIO::GPIOConfiguration* LedConf9;
+			GPIO::GPIOConfiguration* LedConf10;
+			GPIO::GPIOConfiguration* LedConf11;
+			GPIO::GPIOConfiguration* LedConf12;
+			GPIO::GPIOConfiguration* LedConf13;
+			GPIO::GPIOConfiguration* LedConf14;
+			GPIO::GPIOConfiguration* LedConf15;
+			GPIO::GPIOConfiguration* LedConf16;
+			GPIO::GPIOConfiguration* LedConf17;
+			GPIO::GPIOConfiguration* LedConf18;
+			GPIO::GPIOConfiguration* LedConf19;
+			GPIO::GPIOConfiguration* LedConf20;
 			GPIO::GPIOConfiguration* GPIO1Conf1;
 			GPIO::GPIOConfiguration* GPIO2Conf1;
 			GPIO::GPIOConfiguration* GPIO3Conf1;
 			GPIO::GPIOConfiguration* GPIO4Conf1;
-			Led::LedConfiguration* GPIO5Conf3;
-			Led::LedConfiguration* GPIO6Conf4;
-			Led::LedConfiguration* GPIO7Conf5;
-			Led::LedConfiguration* GPIO8Conf6;
+			GPIO::GPIOConfiguration* GPIO5Conf1;
+			GPIO::GPIOConfiguration* GPIO6Conf1;
+			GPIO::GPIOConfiguration* GPIO7Conf1;
+			GPIO::GPIOConfiguration* GPIO8Conf1;
 			UART::UARTConfiguration* UART1Conf1;
 			UART::UARTConfiguration* UART1Conf2;
 			UART::UARTConfiguration* UART2Conf1;
