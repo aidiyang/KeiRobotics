@@ -18,11 +18,11 @@ CANConfiguration::CANConfiguration(CANConfx CANx, CANBAUDRATE baudrate, Configur
 
 }
 
-CAN::CAN(CANConfiguration* conf) : Conf(conf), BufferCount(0), pBuffer(Buffer), AvailableLength(0){
+CAN::CAN(CANConfiguration* conf) : AvailablePackageCount(0), AvailablePackage(0), SendLength(0), pTxBuffer(txBuffer), txBufferCount(0), LineFeedCount(0), Conf(conf), BufferCount(0), pBuffer(Buffer), AvailableLength(0){
 	GPIO_InitTypeDef GPIO_InitStructure;
 	CAN_InitTypeDef CAN_InitStructure;
 	CAN_FilterInitTypeDef CAN_FilterInitStructure;
-//	NVIC_InitTypeDef NVIC_InitStructure;
+	NVIC_InitTypeDef NVIC_InitStructure;
 	uint16_t prescaler;
 	uint8_t GPIO_AF_CANx;
 
@@ -30,12 +30,19 @@ CAN::CAN(CANConfiguration* conf) : Conf(conf), BufferCount(0), pBuffer(Buffer), 
 		CANx = CAN1;
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_CAN1, ENABLE);
 		GPIO_AF_CANx = GPIO_AF_CAN1;
+		NVIC_InitStructure.NVIC_IRQChannel = CAN1_RX0_IRQn;
 	}
 	else if(conf->_CANx == CANConfiguration::CANConf2){
 		CANx = CAN2;
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_CAN2, ENABLE);
 		GPIO_AF_CANx = GPIO_AF_CAN2;
+		NVIC_InitStructure.NVIC_IRQChannel = CAN2_RX0_IRQn;
 	}
+
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 
 	switch(conf->_baudrate){
 		case CANConfiguration::CANBAUDRATE2M:
@@ -75,6 +82,8 @@ CAN::CAN(CANConfiguration* conf) : Conf(conf), BufferCount(0), pBuffer(Buffer), 
 
 	CAN_DeInit(CANx);
 
+
+	CAN_InitStructure.CAN_Prescaler = prescaler;
 	CAN_InitStructure.CAN_TTCM = DISABLE;
 	CAN_InitStructure.CAN_ABOM = DISABLE;
 	CAN_InitStructure.CAN_AWUM = DISABLE;
@@ -102,6 +111,7 @@ CAN::CAN(CANConfiguration* conf) : Conf(conf), BufferCount(0), pBuffer(Buffer), 
 	RCC_AHB1PeriphClockCmd(conf->_tx->_rcc, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = conf->_tx->_pin;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Fast_Speed;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	GPIO_Init(conf->_tx->_port, &GPIO_InitStructure);
@@ -116,6 +126,7 @@ CAN::CAN(CANConfiguration* conf) : Conf(conf), BufferCount(0), pBuffer(Buffer), 
 	RCC_AHB1PeriphClockCmd(conf->_rx->_rcc, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = conf->_rx->_pin;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Fast_Speed;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	GPIO_Init(conf->_rx->_port, &GPIO_InitStructure);
@@ -126,7 +137,7 @@ CAN::CAN(CANConfiguration* conf) : Conf(conf), BufferCount(0), pBuffer(Buffer), 
 		}
 	}
 	GPIO_PinAFConfig(conf->_rx->_port, _rxSource, GPIO_AF_CANx);
-
+	CAN_ITConfig(CANx, CAN_IT_FMP0, ENABLE);
 	TxMsg.StdId = 0x0;
 	TxMsg.ExtId = 0x00;
 	TxMsg.RTR = CAN_RTR_DATA;
@@ -141,15 +152,13 @@ CAN::CAN(CANConfiguration* conf) : Conf(conf), BufferCount(0), pBuffer(Buffer), 
 	RxMsg.FMI = 0;
 }
 
-int CAN::Transmit(uint8_t id, uint8_t* data, int length){
-	TxMsg.StdId = id;
-	TxMsg.DLC = length;
-	for(int i = 0; i < length; i++){
+int CAN::Transmit(uint8_t* data){
+	TxMsg.StdId = TxID;
+	TxMsg.DLC = TxLength;
+	for(int i = 0; i < TxLength; i++){
 		TxMsg.Data[i] = data[i];
 	}
 	int TransMailbox = CAN_Transmit(CANx, &TxMsg);
-
-	printf("%d\r\n", TransMailbox);
 	App::mApp->mTicks->setTimeout(3);
 	while (CAN_TransmitStatus(CANx, TransMailbox) != CAN_TxStatus_Ok){
 		if(App::mApp->mTicks->Timeout()){
@@ -159,28 +168,57 @@ int CAN::Transmit(uint8_t id, uint8_t* data, int length){
 	return TransMailbox;
 }
 
-int CAN::Receive(uint8_t* data){
-	uint8_t returnMailbox = CAN_MessagePending(CANx, CAN_FIFO0);
-	RxMsg.DLC = returnMailbox;
-	if(returnMailbox > 0){
-		CAN_Receive(CANx, CAN_FIFO0, &RxMsg);
-		for(int i = 0; i < returnMailbox; i++){
-			data[i] = RxMsg.Data[i];
+bool CAN::Receive(uint8_t* data){
+	RxMsg.DLC = RxLength;
+	if(RxLength > 0){
+		if(CAN_MessagePending(CANx, CAN_FIFO0) > 0){
+			CAN_Receive(CANx, CAN_FIFO0, &RxMsg);
+			if(AvailablePackageCount >= 2047){
+				AvailablePackageCount = 0;
+				AvailablePackage = 0;
+				BufferCount = 0;
+				AvailableLength = 0;
+				return false;
+			}
+			ID[AvailablePackageCount] = RxMsg.StdId;
+			Length[AvailablePackageCount] = RxLength;
+			for(int i = 0; i < RxLength; i++){
+				data[i] = RxMsg.Data[i];
+				RxMsg.Data[i] = 0;
+			}
+			AvailablePackageCount++;
+			AvailablePackage++;
 		}
 	}
-	return returnMailbox;
+	return true;
+}
+
+void CAN::SendPoll(){
+	if(SendLength > TxLength){
+		char ch[TxLength + 1];
+		for(int i = 0; i < TxLength; i++){
+			ch[i] = txBuffer[txBufferCount - SendLength + i];
+		}
+		ch[TxLength] = '\0';
+		printf("%s", ch);
+		Transmit((uint8_t*)ch);
+		SendLength -= TxLength;
+	}
 }
 
 void CAN::ReceivePoll(){
-	uint8_t data[32];
-	int length = Receive(data);
-	for(int i = 0; i < length; i++){
-			Buffer[BufferCount++] = data[i];
-			if(BufferCount >= 2047){
-				BufferCount = 0;
-			}
-			AvailableLength++;
+	uint8_t data[RxLength];
+	Receive(data);
+	for(int i = 0; i < RxLength; i++){
+		if(BufferCount >= 2047){
+			BufferCount = 0;
+		}
+		Buffer[BufferCount++] = data[i];
+		if(data[i] == '\n'){
+			LineFeedCount++;
+		}
 	}
+	AvailableLength += RxLength;
 }
 
 int CAN::Read(char* buffer, int length){
@@ -188,6 +226,7 @@ int CAN::Read(char* buffer, int length){
 	for(int i = 0; i < length; i++){
 		if(pBuffer >= Buffer + 2047){
 			pBuffer = Buffer;
+			BufferCount = 0;
 		}
 		buffer[i] = *(pBuffer++);
 	}
@@ -196,23 +235,84 @@ int CAN::Read(char* buffer, int length){
 	return AvailableLength;
 }
 
-void CAN::Print(int id, const char* pstr, ...)
+int CAN::ReadLine(char* buffer){
+	pBuffer = &Buffer[BufferCount - AvailableLength];
+	int count = 0;
+	char ch;
+	printf("LineFeedCount:%d\r\n", LineFeedCount);
+	if(LineFeedCount > 0){
+		do{
+			if(pBuffer >= Buffer + 2047){
+				pBuffer = Buffer;
+			}
+			ch = *(pBuffer++);
+			if(ch != '\n'){
+				buffer[count] = ch;
+			}
+			count++;
+		}while(ch != '\n');
+		buffer[count] = '\0';
+		AvailableLength -= count;
+		LineFeedCount--;
+	}
+	printf("count:%d\r\n", count);
+	return AvailableLength;
+}
+
+uint32_t CAN::ReadPackage(uint8_t* data){
+	int currentCount = AvailablePackageCount - AvailablePackage;
+	Read((char*)data, Length[currentCount]);
+	AvailablePackage--;
+	return ID[currentCount];
+}
+
+void CAN::Print(const char* pstr, ...)
 {
 	int length = 0;
 	va_list arglist;
 	char* fp;
+	char buffer[64];
 	for(int i = 0; i < 64; i++){
-		txBuffer[i] = 0;
+		buffer[i] = 0;
 	}
 	va_start(arglist, pstr);
-	vsprintf(txBuffer, pstr, arglist);
+	vsprintf(buffer, pstr, arglist);
 	va_end(arglist);
-	fp = txBuffer;
+	fp = buffer;
 	while(*(fp++)){
 		length++;
 	}
-//	fp = txBuffer;
-//	for(int i = 0; i < length; i++){
-		Transmit(id, (uint8_t*)txBuffer, length);
-//	}
+	fp = buffer;
+	pTxBuffer = &txBuffer[txBufferCount];
+	for(int i = 0; i < length; i++){
+		if(pTxBuffer >= txBuffer + 2047){
+			pTxBuffer = txBuffer;
+			txBufferCount = 0;
+		}
+		*(pTxBuffer++) = buffer[i];
+		txBufferCount++;
+		SendLength++;
+	}
+}
+
+void CAN1_RX0_IRQHandler(){
+	uint8_t data[App::mApp->mCAN1->RxLength];
+	if(App::mApp->mCAN1->Receive(data)){
+		for(int i = 0; i < App::mApp->mCAN1->RxLength; i++){
+			if(App::mApp->mCAN1->BufferCount >= 2047){
+				App::mApp->mCAN1->BufferCount = 0;
+			}
+			App::mApp->mCAN1->Buffer[App::mApp->mCAN1->BufferCount++] = data[i];
+			if(data[i] == '\n'){
+				App::mApp->mCAN1->LineFeedCount++;
+			}
+		}
+		App::mApp->mCAN1->AvailableLength += App::mApp->mCAN1->RxLength;
+	}
+}
+
+void CAN::SendPackage(uint32_t id, uint8_t* data, int length){
+	TxID = id;
+	App::mApp->mCAN1->TxLength = length;
+	Transmit(data);
 }

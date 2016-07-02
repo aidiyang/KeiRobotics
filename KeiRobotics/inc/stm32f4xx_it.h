@@ -87,6 +87,7 @@ void TIM1_CC_IRQHandler();
 void TIM3_IRQHandler();
 void TIM2_IRQHandler();
 void TIM6_DAC_IRQHandler();
+void CAN1_RX0_IRQHandler();
 
 #ifdef __cplusplus
 }

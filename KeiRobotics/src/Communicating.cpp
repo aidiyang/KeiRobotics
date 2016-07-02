@@ -58,7 +58,7 @@ void Communicating::ReceivePoll(){
 				char ch[3] = {Buffer[i + 1], Buffer[i + 2], Buffer[i + 3]};
 				cutLenght += 5;
 				int d[3];
-				d[0] = (int)ch[0] - 48;
+				d[0] = (int)ch[0] - 14;
 				for(int l = 1; l < 3; l++){
 					if(ch[l] < 0){
 						d[l] = (int)ch[l] + 255;
@@ -662,7 +662,7 @@ void Communicating::Send(int cmd, float data){
 	char bytes[5];
 	int halfInt = MathTools::FloatToHalfInt(data);
 	bytes[0] = 0x24;
-	bytes[1] = (char)(cmd + 48);
+	bytes[1] = (char)(cmd + 14);
 	bytes[2] = (char)(((halfInt & 0xff00) >> 8) + 1);
 	bytes[3] = (char)((halfInt & 0x00ff) + 1);
 	bytes[4] = 0x23;

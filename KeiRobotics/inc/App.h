@@ -206,6 +206,95 @@ namespace System{
 			uint32_t* funcAddr;
 			uint32_t funcNum;
 			float error;
+
+			struct HeartBeat{
+				uint32_t DeviceID;
+				uint32_t DeviceSerial;
+			} mHeartBeat;
+
+			struct TempInfo{
+				uint32_t CMUSerialNum;
+				int16_t PCBTemp;
+				int16_t CellTemp;
+			} mTempInfo[4];
+
+			struct CMUCellVoltage{
+				int16_t CellVoltages[8];
+			} mCMUCellVoltage[4];
+
+			struct PackStateOfCharge{
+				float SOC;
+				float SOCPercentage;
+			} mPackStateOfCharge;
+
+			struct PackBalanceStateOfCharge{
+				float BalanceSOC;
+				float BalanceSOCPercentage;
+			} mPackBalanceStateOfCharge;
+
+			struct ChargerControlInformation{
+				int16_t ChargingCellVoltError;
+				int16_t CellTempMargin;
+				int16_t DischargingCellVoltError;;
+				uint16_t TotalPackCapacity;
+			} mChargerControlInformation;
+
+			struct PrechargeStatus{
+				uint8_t PrechargeContactorDriverStatus;
+				uint8_t PrechargeState;
+				uint16_t TwelveVoltContactorSupplyVoltage;
+				uint8_t PrechargeTimer;
+				uint8_t PrechargeTimerCounter;
+
+			} mPrechargeStatus;
+
+			struct MinMaxCellVoltage{
+				uint16_t MinCellVoltage;
+				uint16_t MaxCellVoltage;
+				uint8_t CMUNumMinCellVolt;
+				uint8_t CellNumCMUMinCellVolt;
+				uint8_t CMUNumMaxCellVolt;
+				uint8_t CellNumCMUMaxCellVolt;
+			} mMinMaxCellVoltage;
+
+			struct MinMaxCellTemp{
+				uint16_t MinCellTemp;
+				uint16_t MaxCellTemp;
+				uint8_t CMUNumMinCellTemp;
+				uint8_t CMUNumMaxCellTemp;
+			} mMinMaxCellTemp;
+
+			struct BatteryPackVoltageCurrent{
+				uint32_t BatteryVoltage;
+				uint32_t BatteryCurrent;
+			} mBatteryPackVoltageCurrent;
+
+			struct BatteryPackStatus{
+				uint16_t BalanceVoltageThresholdRising;
+				uint16_t BalanceVoltageThresholdFalling;
+				uint8_t StatusFlags;
+				uint8_t BMSCMUCount;
+				uint16_t BMSBMUFirmwareBuildNum;
+			} mBatteryPackStatus;
+
+			struct BatteryPackFanStatus{
+				uint16_t FanSpeed0;
+				uint16_t FanSpeed1;
+				uint16_t TwelveCurrentConsumptionOfFansPlusContactors;
+				uint16_t TwelveCurrentConsumptionOfCMUs;
+
+			} mBatteryPackFanStatus;
+
+			struct ExtendedBatteryPackStatus{
+				uint32_t StatusFlags;
+				uint8_t BMUHWVersion;
+				uint8_t BMUModelID;
+			} mExtendedBatteryPackStatus;
+
+			struct EVDriverControlsSwitchPosition{
+				uint16_t State;
+			} mEVDriverControlsSwitchPosition;
+
 		private:
 	};
 };

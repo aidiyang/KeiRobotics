@@ -9,7 +9,7 @@
 
 Config::Config(){
 
-	CAN1Conf1 = new CANConfiguration(CANConfiguration::CANConf1, CANConfiguration::CANBAUDRATE1M, new Configuration(GPIOD, GPIO_Pin_1), new Configuration(GPIOD, GPIO_Pin_0));
+	CAN1Conf1 = new CANConfiguration(CANConfiguration::CANConf1, CANConfiguration::CANBAUDRATE500K, new Configuration(GPIOD, GPIO_Pin_1), new Configuration(GPIOD, GPIO_Pin_0));
 
 	GPIO1Conf1 = new GPIO::GPIOConfiguration(new Configuration(GPIOD, GPIO_Pin_12), Bit_SET);
 	GPIO2Conf1 = new GPIO::GPIOConfiguration(new Configuration(GPIOD, GPIO_Pin_13), Bit_SET);

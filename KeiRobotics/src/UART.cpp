@@ -446,7 +446,7 @@ void UART::Print(const char* pstr, ...)
 	int length = 0;
 	va_list arglist;
 	char* fp;
-	for(int i = 0; i < 64; i++){
+	for(int i = 0; i < 256; i++){
 		txBuffer[i] = 0;
 	}
 	va_start(arglist, pstr);

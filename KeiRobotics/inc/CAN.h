@@ -29,22 +29,37 @@ namespace Communication{
 	class CAN{
 		public:
 			CAN(CANConfiguration* conf);
-			int Transmit(uint8_t id, uint8_t* data, int length);
-			int Receive(uint8_t* data);
+			int Transmit(uint8_t* data);
+			bool Receive(uint8_t* data);
 			void SendPoll();
 			void ReceivePoll();
 			void Print(int id, const char* pstr, ...);
 			int Read(char*, int);
+			int ReadLine(char* buffer);
+			uint32_t ReadPackage(uint8_t* data);
+			void SendPackage(uint32_t id, uint8_t* data, int length);
 			void Print(const char*, ...);
 			CANConfiguration* Conf;
 			CAN_TypeDef* CANx;
 			CanTxMsg TxMsg;
 			CanRxMsg RxMsg;
 			char Buffer[2048];
-			char txBuffer[64];
+			char txBuffer[2048];
 			char* pBuffer;
+			char* pTxBuffer;
 			int BufferCount;
+			int txBufferCount;
+			int SendLength;
 			int AvailableLength;
+			int TxLength;
+			int RxLength;
+			uint32_t TxID;
+			uint32_t RxID;
+			int LineFeedCount;
+			uint32_t ID[2048];
+			uint8_t Length[2048];
+			int AvailablePackage;
+			int AvailablePackageCount;
 	};
 };
 
