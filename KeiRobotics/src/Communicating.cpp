@@ -82,6 +82,16 @@ void Communicating::ReceivePoll(){
 	}
 }
 
+void _ResetTask(Bundle* bundle){
+	for(int i = 0; i < 6; i++){
+		App::mApp->InitEuler[i] = App::mApp->mQuaternion[i]->getEuler();
+		App::mApp->mQuaternion[i]->mean[0] = 0;
+		App::mApp->mQuaternion[i]->mean[1] = 0;
+		App::mApp->mQuaternion[i]->mean[2] = 0;
+	}
+	printf("RESETED\r\n");
+}
+
 void Communicating::SendPoll(){
 	char D[txBufferCount + 1];
 	for(int i = 0; i < txBufferCount; i++){
@@ -189,7 +199,10 @@ void Communicating::Execute(int cmd, float data){
 			if(App::mApp->mCompass != 0){
 				App::mApp->mCompass->Reset();
 			}
-			App::mApp->mQuaternion->Reset();
+			for(int i = 0; i < 6; i++){
+				App::mApp->mQuaternion[i]->Reset();
+			}
+//			App::mApp->mTask->Attach(5000, _ResetTask, "_ResetTask", false, 1);
 
 //			for(int i = 0; i < 500; i++){
 //				App::mApp->mMPU6050->Update();
@@ -205,7 +218,7 @@ void Communicating::Execute(int cmd, float data){
 //			App::mApp->mControlling->PitchOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1]);
 //			App::mApp->mControlling->YawOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2]);
 //			App::mApp->mControlling->Lift = 0;
-			Acknowledgement();
+//			Acknowledgement();
 			break;
 		case CMD::ROLL_OFFSET:
 			App::mApp->mControlling->setRollOffset(App::mApp->mControlling->getRollOffset() + data);

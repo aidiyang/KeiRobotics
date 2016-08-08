@@ -16,6 +16,7 @@ namespace Math{
 			void Update(float value);
 			float getAverage();
 			void Clear();
+			float getMedian();
 		private:
 			float* buffer;
 			int WindowSize;

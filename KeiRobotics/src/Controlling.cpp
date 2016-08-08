@@ -120,11 +120,11 @@ void Controlling::ControllingPoll(){
 //			watchDogCount++;
 		}
 
-		float errRoll = RollPid->pid(MathTools::DegreeToRadian(RollTarget), App::mApp->mQuaternion->getEuler()[0] - MathTools::DegreeToRadian(RollOffset)) + KdRollPid->pid(0, App::mApp->mOmega->getOmega()[0]);
-		float errPitch = PitchPid->pid(MathTools::DegreeToRadian(PitchTarget), App::mApp->mQuaternion->getEuler()[1] - MathTools::DegreeToRadian(PitchOffset)) + KdPitchPid->pid(0, App::mApp->mOmega->getOmega()[1]);
-		float errYaw = YawPid->pid(MathTools::DegreeToRadian(YawTarget), App::mApp->mQuaternion->getEuler()[2] - MathTools::DegreeToRadian(YawOffset)) + KdYawPid->pid(0, App::mApp->mOmega->getOmega()[2]);
+		float errRoll = RollPid->pid(MathTools::DegreeToRadian(RollTarget), App::mApp->mQuaternion[0]->getEuler()[0] - MathTools::DegreeToRadian(RollOffset)) + KdRollPid->pid(0, App::mApp->mOmega[0]->getOmega()[0]);
+		float errPitch = PitchPid->pid(MathTools::DegreeToRadian(PitchTarget), App::mApp->mQuaternion[0]->getEuler()[1] - MathTools::DegreeToRadian(PitchOffset)) + KdPitchPid->pid(0, App::mApp->mOmega[0]->getOmega()[1]);
+		float errYaw = YawPid->pid(MathTools::DegreeToRadian(YawTarget), App::mApp->mQuaternion[0]->getEuler()[2] - MathTools::DegreeToRadian(YawOffset)) + KdYawPid->pid(0, App::mApp->mOmega[0]->getOmega()[2]);
 
-		float cosRollcosPitch = cosf(App::mApp->mQuaternion->getEuler()[0] - MathTools::DegreeToRadian(RollOffset)) * cosf(App::mApp->mQuaternion->getEuler()[1] - MathTools::DegreeToRadian(PitchOffset));
+		float cosRollcosPitch = cosf(App::mApp->mQuaternion[0]->getEuler()[0] - MathTools::DegreeToRadian(RollOffset)) * cosf(App::mApp->mQuaternion[0]->getEuler()[1] - MathTools::DegreeToRadian(PitchOffset));
 
 		Motor1PWM = Lift / cosRollcosPitch + errRoll - errPitch + errYaw;
 		Motor2PWM = Lift / cosRollcosPitch - errRoll - errPitch - errYaw;

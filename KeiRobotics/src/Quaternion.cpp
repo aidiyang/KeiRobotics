@@ -11,6 +11,7 @@
 #include <math.h>
 #include <Kalman.h>
 #include <MPU6050.h>
+#include <MPU6500.h>
 #include <stdio.h>
 #include <Pid.h>
 #include <Task.h>
@@ -30,13 +31,16 @@ Quaternion::Quaternion(Acceleration* mAcceleration, Omega* mOmega) : _mAccelerat
 	Matrix3f Q;
 	Q.setIdentity();
 	Q *= 1e-6f;
-	Q(2,2) = 1e-12f;
+//	Q(2,2) = 1e-12f;
 	Matrix3f R;
 	R.setIdentity();
-	R *= 1e-2f;
-	R(2,2) *= 1e-6f;
-	_QuaternionKalman = new Kalman(mAcceleration->getAngle(), Q, R);
+	R *= 1e-4f;
+//	R(2,2) *= 1e-6f;
+	_QuaternionKalman = new Kalman(mAcceleration->getFilteredAngle(), Q, R);
 	PrevTick = App::mApp->mTicks->getTicks();
+//	mean[0] = new MovingWindowAverageFilter(100);
+//	mean[1] = new MovingWindowAverageFilter(100);
+//	mean[2] = new MovingWindowAverageFilter(100);
 }
 
 Quaternion::Quaternion(Acceleration* mAcceleration, Omega* mOmega, Compass* mCompass) : _mAcceleration(mAcceleration), _mOmega(mOmega), IsUseCompass(true), IsUseEncoderYaw(false), Interval(0), Valid(false), _mCompass(mCompass), _mEncoderYaw((EncoderYaw*)0){
@@ -46,8 +50,8 @@ Quaternion::Quaternion(Acceleration* mAcceleration, Omega* mOmega, Compass* mCom
 	Q *= 1e-6f;
 	Matrix3f R;
 	R.setIdentity();
-	R *= 1e-1f;
-	_QuaternionKalman = new Kalman(mAcceleration->getAngle(), Q, R);
+	R *= 1e-4f;
+	_QuaternionKalman = new Kalman(mAcceleration->getFilteredAngle(), Q, R);
 	PrevTick = App::mApp->mTicks->getTicks();
 }
 
@@ -59,14 +63,14 @@ Quaternion::Quaternion(Acceleration* mAcceleration, Omega* mOmega, EncoderYaw* m
 	Q *= 1e-6f;
 	Matrix3f R;
 	R.setIdentity();
-	R *= 1e-1f;
+	R *= 1e-4f;
 	_QuaternionKalman = new Kalman(mAcceleration->getAngle(), Q, R);
 	PrevTick = App::mApp->mTicks->getTicks();
 }
 
 bool Quaternion::Update(){
 	if(_mOmega->getIsValided()){
-		Vector3f omega = _mOmega->getOmega() * MathTools::RADIAN_PER_DEGREE;
+		Vector3f omega = _mOmega->getFilteredOmega() * MathTools::RADIAN_PER_DEGREE;
 		Vector4f q;
 		q << 0, omega[0], omega[1], omega[2];
 		Vector4f t;
@@ -87,15 +91,16 @@ bool Quaternion::Update(){
 		q.normalize();
 		Vector3f e = QuaternionToEuler(q);
 		bool valid = true;
-		bool AccValid = _mAcceleration->getIsValided() && (_mAcceleration->getAcc().norm() > Acceleration::Gravity * 0.95f) && (_mAcceleration->getAcc().norm() < Acceleration::Gravity * 1.05f);
+		bool AccValid = _mAcceleration->getIsValided() && (_mAcceleration->getFilteredAcc().norm() > Acceleration::Gravity * 0.75f) && (_mAcceleration->getFilteredAcc().norm() < Acceleration::Gravity * 1.25f);
 		Vector3f angle;
 		bool MagValid;
 
 		if(IsUseCompass){
-			MagValid = _mCompass->getIsValided() && _mCompass->getMag().norm() > 0.9f && _mCompass->getMag().norm() < 1.1f;
+			MagValid = _mCompass->getIsValided() && _mCompass->getMag().norm() > 0.75f && _mCompass->getMag().norm() < 1.25f;
 		}
+		AccValid = true;
 		if(AccValid){
-			angle = _mAcceleration->getAngle();
+			angle = _mAcceleration->getFilteredAngle();
 			if(IsUseCompass && MagValid){
 				angle[2] = _mCompass->getAngle()[2];
 			}
@@ -124,23 +129,37 @@ bool Quaternion::Update(){
 		A.setIdentity();
 		Matrix3f H;
 		H.setIdentity();
-		if(valid && AccValid && _QuaternionKalman->Filtering(A, e, H, angle)){
-			angle = _QuaternionKalman->getCorrectedData();
-			for(int i = 0; i < 3; i++){
-				if(angle[i] != angle[i]){
-					Valid = false;
-					return false;
+		static int delayCount = 0;
+		if(delayCount++ >= 10 && valid && AccValid){
+			delayCount = 0;
+			if(_QuaternionKalman->Filtering(A, e, H, angle)){
+				angle = _QuaternionKalman->getCorrectedData();
+				for(int i = 0; i < 3; i++){
+					if(angle[i] != angle[i]){
+						Valid = false;
+						return false;
+					}
 				}
+				if(IsUseEncoderYaw && fabs(fabs(_mEncoderYaw->getYaw()) - MathTools::PI) < 0.01f){
+					angle[2] = _mEncoderYaw->getYaw();
+				}
+				_Euler = angle;
 			}
-			if(IsUseEncoderYaw && fabs(fabs(_mEncoderYaw->getYaw()) - MathTools::PI) < 0.01f){
-				angle[2] = _mEncoderYaw->getYaw();
-			}
-			_Euler = angle;
 		}
 		else{
 			_Euler = e;
 		}
 		_Quaternion = EulerToQuaternion(_Euler);
+		_Quaternion.normalize();
+//		mean[0]->Update(_Euler[0]);
+//		mean[1]->Update(_Euler[1]);
+//		mean[2]->Update(_Euler[2]);
+		mean[0] += _Euler[0];
+		mean[1] += _Euler[1];
+		mean[2] += _Euler[2];
+		mean[0] /= 2;
+		mean[1] /= 2;
+		mean[2] /= 2;
 		return true;
 	}
 	else{
@@ -196,6 +215,19 @@ Vector3f Quaternion::QuaternionToEuler(Vector4f q){
 	float r33 = 1 - 2 * (q[1] * q[1] + q[2] * q[2]);
 	euler[1] = atan2f(-2 * (q[1] * q[3] - q[0] * q[2]), sqrtf(r32 * r32 + r33 * r33));
 	euler[2] = atan2f(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] * q[2] + q[3] * q[3]));
+
+//	euler[0] = atan2f(2 * (q[0] * q[1] - q[2] * q[3]), 1 - 2 * (q[1] * q[1] + q[3] * q[3]));
+//	euler[1] = asinf(2 * (q[1] * q[2] - q[0] * q[3]));
+//	euler[2] = atan2f(2 * (q[0] * q[2] - q[1] * q[3]), 1 - 2 * (q[2] * q[2] + q[3] * q[3]));
+//	if(q[1]*q[2]+q[0]*q[3] == 0.5){
+//		euler[2] = 2*atan2f(q[1],q[0]);
+//		euler[0] = 0;
+//	}
+//	if(q[1]*q[2]+q[0]*q[3] == -0.5){
+//		euler[2] = -2*atan2f(q[1],q[0]);
+//		euler[0] = 0;
+//	}
+
 	return euler;
 }
 

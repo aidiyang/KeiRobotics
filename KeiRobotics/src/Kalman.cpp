@@ -14,10 +14,10 @@ using namespace Utility;
 Kalman::Kalman(VectorXf X, MatrixXf Q, MatrixXf R) : predictX(X), correctX(X), _Q(Q), _R(R){
 	correctP = Q;
 	correctP.setIdentity();
-	correctP *= 1e-12f;
+	correctP*=1e-6f;
 	predictP = Q;
 	predictP.setIdentity();
-	predictP *= 1e-12f;
+	predictP*=1e-6f;
 }
 
 void Kalman::setCorrectedData(VectorXf data){
@@ -75,9 +75,9 @@ bool Kalman::Gain(MatrixXf H){
 
 void Kalman::Clear(VectorXf X){
 	predictP.setIdentity();
-	predictP *= 1e-12f;
+	predictP*=1e-6f;
 	correctP.setIdentity();
-	correctP *= 1e-12f;
+	correctP*=1e-6f;
 }
 
 MatrixXf Kalman::getQ(){

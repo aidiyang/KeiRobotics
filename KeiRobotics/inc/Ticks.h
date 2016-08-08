@@ -28,6 +28,7 @@ namespace Time{
 			bool Timeout();
 			uint16_t getTimeout();
 			uint16_t getSec();
+			void StartWatchDog();
 			void PrintTime();
 			static uint16_t maxTicks;
 			bool OnWatchDog;

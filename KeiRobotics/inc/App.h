@@ -40,6 +40,7 @@
 #include <ExternalInterrupt.h>
 #include <Eigen/Eigen>
 #include <CAN.h>
+#include <InputCapture.h>
 
 using namespace Time;
 using namespace Math;
@@ -145,6 +146,7 @@ namespace System{
 			static Communicating* mCommunicating3;
 			Communicating* mCommunicating4;
 			PWM* mPWM;
+			InputCapture* mInputCapture;
 			ADConverter* mADC;
 			Sonic* mSonic1;
 			Sonic* mSonic2;
@@ -166,12 +168,12 @@ namespace System{
 			static Spi* mSpi2;
 			I2C* mI2C1;
 			I2C* mI2C2;
-			MPU6050* mMPU6050;
+			MPU6500* mMPU6500[6];
 			HMC5883L* mHMC5883L;
-			Acceleration* mAcceleration;
-			Omega* mOmega;
+			Acceleration* mAcceleration[6];
+			Omega* mOmega[6];
 			Compass* mCompass;
-			Quaternion* mQuaternion;
+			Quaternion* mQuaternion[6];
 			Controlling* mControlling;
 			MovingWindowAverageFilter* mADCFilter;
 			Encoder* mEncoder1;
@@ -206,6 +208,7 @@ namespace System{
 			uint32_t* funcAddr;
 			uint32_t funcNum;
 			float error;
+			Vector3f InitEuler[6];
 
 			struct HeartBeat{
 				uint32_t DeviceID;
@@ -266,7 +269,7 @@ namespace System{
 
 			struct BatteryPackVoltageCurrent{
 				uint32_t BatteryVoltage;
-				uint32_t BatteryCurrent;
+				int32_t BatteryCurrent;
 			} mBatteryPackVoltageCurrent;
 
 			struct BatteryPackStatus{

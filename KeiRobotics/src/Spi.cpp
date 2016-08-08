@@ -30,6 +30,7 @@ void SPI1_IRQHandler()
 		App::mApp->mSpi1->AvailableLength++;
 		if(App::mApp->mSpi1->BufferCount >= 2047){
 			App::mApp->mSpi1->BufferCount = 0;
+			App::mApp->mSpi1->AvailableLength = 0;
 		}
 		if(App::mApp->mSpi1->Conf->IsSlave){
 			if(App::mApp->mSpi1->SlaveTxLength > 0){
@@ -43,6 +44,7 @@ void SPI1_IRQHandler()
 				App::mApp->mSpi1->SlaveTxLength--;
 				if(App::mApp->mSpi1->SlaveTxBufferCount >= 2047){
 					App::mApp->mSpi1->SlaveTxBufferCount = 0;
+					App::mApp->mSpi1->SlaveTxLength = 0;
 				}
 			}
 		}
@@ -58,6 +60,7 @@ void SPI2_IRQHandler()
 		App::mApp->mSpi2->AvailableLength++;
 		if(App::mApp->mSpi2->BufferCount >= 2047){
 			App::mApp->mSpi2->BufferCount = 0;
+			App::mApp->mSpi2->AvailableLength = 0;
 		}
 		if(App::mApp->mSpi2->Conf->IsSlave){
 			if(App::mApp->mSpi2->SlaveTxLength > 0){
@@ -71,6 +74,7 @@ void SPI2_IRQHandler()
 				App::mApp->mSpi2->SlaveTxLength--;
 				if(App::mApp->mSpi2->SlaveTxBufferCount >= 2047){
 					App::mApp->mSpi2->SlaveTxBufferCount = 0;
+					App::mApp->mSpi2->SlaveTxLength = 0;
 				}
 			}
 		}
@@ -80,6 +84,7 @@ void SPI2_IRQHandler()
 void Spi::setSlaveTxBuffer(char* data, int length){
 	if(SlaveTxBufferCount + SlaveTxLength >= 2047){
 		SlaveTxBufferCount = 0;
+		SlaveTxLength = 0;
 	}
 	pSlaveTxBuffer = &SlaveTxBuffer[SlaveTxBufferCount];
 	for(int i = 0; i < length; i++){
@@ -201,6 +206,7 @@ void Spi::Initialize(SpiConfiguration* conf){
 			GPIO_InitStructure.GPIO_Pin = conf->CS[i]->_pin;
 			GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 			GPIO_Init(conf->CS[i]->_port, &GPIO_InitStructure);
+			GPIO_SetBits(conf->CS[i]->_port, conf->CS[i]->_pin);
 		}
 	}
 
@@ -304,13 +310,27 @@ bool Spi::Byte(uint8_t byte, uint8_t* data){
 	}
 
 	SPI_I2S_SendData(Spix, byte);
+
 	App::mApp->mTicks->setTimeout(3);
-	while(SPI_I2S_GetFlagStatus(Spix, SPI_I2S_FLAG_RXNE) == RESET){
+	while(SPI_I2S_GetFlagStatus(Spix, SPI_I2S_FLAG_TXE) == RESET){
 		if(App::mApp->mTicks->Timeout()){
 			return false;
 		}
 	}
-	*data = (uint8_t)SPI_I2S_ReceiveData(Spix);
+//	*data = (uint8_t)SPI_I2S_ReceiveData(Spix);
+
+	App::mApp->mTicks->setTimeout(3);
+	while(AvailableLength == 0){
+		if(App::mApp->mTicks->Timeout()){
+			printf("SPI_ERROR");
+			return false;
+		}
+	}
+	uint8_t ch[2];
+	if(Read((char*)ch, 1) < 0){
+		return false;
+	}
+	*data = (uint8_t)(ch[0]);
 	return true;
 }
 
@@ -434,11 +454,11 @@ bool Spi::ReadNBytes(int index, uint8_t reg, uint8_t length, uint8_t* pData){
 
 void Spi::ChipSelect(int index){
 	GPIO_ResetBits(Conf->CS[index]->_port, Conf->CS[index]->_pin);
-	Delay::DelayUS(1);
+	Delay::DelayUS(10);
 }
 
 void Spi::ChipDeSelect(int index){
-	Delay::DelayUS(1);
+	Delay::DelayUS(10);
 	GPIO_SetBits(Conf->CS[index]->_port, Conf->CS[index]->_pin);
 }
 
@@ -447,6 +467,9 @@ int Spi::Read(char* buffer, int length){
 	for(int i = 0; i < length; i++){
 		if(pBuffer >= Buffer + 2047){
 			pBuffer = Buffer;
+			BufferCount = 0;
+			AvailableLength = 0;
+			return -1;
 		}
 		buffer[i] = *(pBuffer++);
 	}

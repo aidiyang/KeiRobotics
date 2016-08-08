@@ -27,64 +27,60 @@ Com* App::Com1 = 0;
 Com* App::Com2 = 0;
 Com* App::Com3 = 0;
 
-void ControlTask(){
-//	App::mApp->mControlling->ControllingPoll();
+//void ControlTask(){
+////	App::mApp->mControlling->ControllingPoll();
+//
+//	float value = App::mApp->Motor1PID->pid(0, App::mApp->mQuaternion->getEuler()[2]);
+//	if(value == value){
+//
+//		App::mApp->error += value;
+//		App::mApp->error = MathTools::Trim(-10000, App::mApp->error, 10000);
+//		if(App::mApp->error < 0){
+//			App::mApp->mGPIO1->GPIOControl(false);
+//		}
+//		else{
+//			App::mApp->mGPIO1->GPIOControl(true);
+//		}
+//		if(MathTools::CheckWithInInterval(MathTools::RadianToDegree(fabs(App::mApp->mQuaternion->getEuler()[2])), 0, 3)){
+//			App::mApp->error = 0;
+//		}
+//		App::mApp->mPWM->Control1(fabs(App::mApp->error));
+//	}
+//}
+//
 
-	float value = App::mApp->Motor1PID->pid(0, App::mApp->mQuaternion->getEuler()[2]);
-	if(value == value){
-
-		App::mApp->error += value;
-		App::mApp->error = MathTools::Trim(-10000, App::mApp->error, 10000);
-		if(App::mApp->error < 0){
-			App::mApp->mGPIO1->GPIOControl(false);
-		}
-		else{
-			App::mApp->mGPIO1->GPIOControl(true);
-		}
-		if(MathTools::CheckWithInInterval(MathTools::RadianToDegree(fabs(App::mApp->mQuaternion->getEuler()[2])), 0, 3)){
-			App::mApp->error = 0;
-		}
-		App::mApp->mPWM->Control1(fabs(App::mApp->error));
-	}
-}
-
-void initUpdate(Bundle* bundle){
-	App::mApp->mMPU6050->Update();
-	App::mApp->mAcceleration->Update();
-	App::mApp->mOmega->Update();
-}
-
-void initCompassUpdate(){
-	App::mApp->mHMC5883L->Update();
-	App::mApp->mCompass->Update();
-}
-
-void UpdateTask(){
-	App::mApp->mMPU6050->Update();
-	App::mApp->mAcceleration->Update();
-	App::mApp->mOmega->Update();
-	App::mApp->mQuaternion->Update();
-
-}
-
-void MPU6050UpdateTask(){
-	App::mApp->mMPU6050->Update();
-
-}
-
-void AccelerationUpdateTask(){
-	App::mApp->mAcceleration->Update();
-
-}
-
-void OmegaUpdateTask(){
-	App::mApp->mOmega->Update();
-}
-
-void QuaternionUpdateTask(){
-	App::mApp->mQuaternion->Update();
-
-}
+//
+//void initCompassUpdate(){
+//	App::mApp->mHMC5883L->Update();
+//	App::mApp->mCompass->Update();
+//}
+//
+//void UpdateTask(){
+//	App::mApp->mMPU6050->Update();
+//	App::mApp->mAcceleration->Update();
+//	App::mApp->mOmega->Update();
+//	App::mApp->mQuaternion->Update();
+//
+//}
+//
+//void MPU6050UpdateTask(){
+//	App::mApp->mMPU6050->Update();
+//
+//}
+//
+//void AccelerationUpdateTask(){
+//	App::mApp->mAcceleration->Update();
+//
+//}
+//
+//void OmegaUpdateTask(){
+//	App::mApp->mOmega->Update();
+//}
+//
+//void QuaternionUpdateTask(){
+//	App::mApp->mQuaternion->Update();
+//
+//}
 
 void CompassUpdate(){
 	App::mApp->mHMC5883L->Update();
@@ -103,49 +99,49 @@ void App::SendTask(Bundle* bundle){
 //	mCommunicating3->SendPoll();
 }
 
-void print(){
-	static int index = 0;
-	switch(App::mApp->mCommunicating1->PrintType){
-		case 0:
-			if(index < 3){
-				if(index == 0){
-					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index])));// - App::mApp->mControlling->RollOffset));
-				}
-				else if(index == 1){
-					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index])));// - App::mApp->mControlling->PitchOffset));
-				}
-				else if(index == 2){
-					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index])));// - App::mApp->mControlling->YawOffset));
-				}
-			}
-			break;
-		case 1:
-			if(index < 3){
-				App::mApp->mCommunicating1->Send(index, (float)(App::mApp->mMPU6050->getRawOmega()[index]));
-			}
-			break;
-		case 2:
-			if(index == 0){
-				App::mApp->mCommunicating1->Send(0, App::mApp->mControlling->Motor1PWM);
-			}
-			else if(index == 1){
-				App::mApp->mCommunicating1->Send(1, App::mApp->mControlling->Motor2PWM);
-			}
-			else if(index == 2){
-				App::mApp->mCommunicating1->Send(2, App::mApp->mControlling->Motor3PWM);
-			}
-			else if(index == 3){
-				App::mApp->mCommunicating1->Send(3, App::mApp->mControlling->Motor4PWM);
-			}
-			break;
-	}
-	if(index == 4){
-		index = 0;
-	}
-	else{
-		index++;
-	}
-}
+//void print(){
+//	static int index = 0;
+//	switch(App::mApp->mCommunicating1->PrintType){
+//		case 0:
+//			if(index < 3){
+//				if(index == 0){
+//					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index])));// - App::mApp->mControlling->RollOffset));
+//				}
+//				else if(index == 1){
+//					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index])));// - App::mApp->mControlling->PitchOffset));
+//				}
+//				else if(index == 2){
+//					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index])));// - App::mApp->mControlling->YawOffset));
+//				}
+//			}
+//			break;
+//		case 1:
+//			if(index < 3){
+//				App::mApp->mCommunicating1->Send(index, (float)(App::mApp->mMPU6050->getRawOmega()[index]));
+//			}
+//			break;
+//		case 2:
+//			if(index == 0){
+//				App::mApp->mCommunicating1->Send(0, App::mApp->mControlling->Motor1PWM);
+//			}
+//			else if(index == 1){
+//				App::mApp->mCommunicating1->Send(1, App::mApp->mControlling->Motor2PWM);
+//			}
+//			else if(index == 2){
+//				App::mApp->mCommunicating1->Send(2, App::mApp->mControlling->Motor3PWM);
+//			}
+//			else if(index == 3){
+//				App::mApp->mCommunicating1->Send(3, App::mApp->mControlling->Motor4PWM);
+//			}
+//			break;
+//	}
+//	if(index == 4){
+//		index = 0;
+//	}
+//	else{
+//		index++;
+//	}
+//}
 
 void BatteryPrint(){
 	App::mApp->mADCFilter->Update(App::mApp->mADC->getReading() * 3.3 / 4096.0);
@@ -170,14 +166,14 @@ void printfBufferTask(){
 }
 
 void Task100Hz(Bundle* bundle){
-	UpdateTask();
+//	UpdateTask();
 //	ControlTask();
 //	ReceiveTask();
 //	SendTask();
 }
 
 void Task500Hz(Bundle* bundle){
-	UpdateTask();
+//	UpdateTask();
 //	ControlTask();
 //	ControlTask();
 //	ReceiveTask();
@@ -348,32 +344,38 @@ void CANReadTask(Bundle* bundle){
 				App::mApp->mExtendedBatteryPackStatus.BMUHWVersion = ch[4];
 				App::mApp->mExtendedBatteryPackStatus.BMUModelID = ch[5];
 			}
-			else if(id == 0x505	){
+			else if(id == 0x505){
 				App::mApp->mEVDriverControlsSwitchPosition.State = (ch[1] << 8) | (ch[0] << 0);
 			}
 		}
 	}
 }
 
-void StatePrint(Bundle* bundle){
+void StatePrint2(Bundle* bundle){
 	static int index = 0;
 	float data;
-	switch(index){
-		case 0:
-			App::mApp->mCommunicating1->Send(0, App::mApp->mHeartBeat.DeviceID);
-			App::mApp->mCommunicating1->Send(1, App::mApp->mHeartBeat.DeviceSerial);
-			break;
-		case 1:
-			static int CMUIndex = 0;
-			data = (float)App::mApp->mTempInfo[CMUIndex].CellTemp / 10.0f;
-			App::mApp->mCommunicating1->Send(75 + CMUIndex, data);
-			data = (float)App::mApp->mTempInfo[CMUIndex].PCBTemp / 10.0f;
-			App::mApp->mCommunicating1->Send(75 + CMUIndex, data);
 
-			if(CMUIndex++ >= 3){
-				CMUIndex = 0;
-			}
-			break;
+	switch(index){
+//		case 0:
+//			for(int i = 0; i < 4; i++){
+//				App::mApp->mCommunicating1->Send(i, MathTools::RadianToDegree(App::mApp->mQuaternion[i]->getEuler()[0]));
+//			}
+
+
+//			App::mApp->mCommunicating1->Send(0, App::mApp->mHeartBeat.DeviceID);
+//			App::mApp->mCommunicating1->Send(1, App::mApp->mHeartBeat.DeviceSerial);
+//			break;
+//		case 1:
+//			static int CMUIndex = 0;
+//			data = (float)App::mApp->mTempInfo[CMUIndex].CellTemp / 10.0f;
+//			App::mApp->mCommunicating1->Send(75 + CMUIndex, data);
+//			data = (float)App::mApp->mTempInfo[CMUIndex].PCBTemp / 10.0f;
+//			App::mApp->mCommunicating1->Send(75 + CMUIndex, data);
+//
+//			if(CMUIndex++ >= 3){
+//				CMUIndex = 0;
+//			}
+//			break;
 		case 2:
 			static int _CMUIndex = 0;
 			for(int i = 0; i < 8; i++){
@@ -384,14 +386,14 @@ void StatePrint(Bundle* bundle){
 				_CMUIndex = 0;
 			}
 			break;
-		case 3:
-			App::mApp->mCommunicating1->Send(37, App::mApp->mPackStateOfCharge.SOC);
-			App::mApp->mCommunicating1->Send(38, App::mApp->mPackStateOfCharge.SOCPercentage);
-			break;
-		case 4:
-			App::mApp->mCommunicating1->Send(39, App::mApp->mPackBalanceStateOfCharge.BalanceSOC);
-			App::mApp->mCommunicating1->Send(40, App::mApp->mPackBalanceStateOfCharge.BalanceSOCPercentage);
-			break;
+//		case 3:
+//			App::mApp->mCommunicating1->Send(37, App::mApp->mPackStateOfCharge.SOC);
+//			App::mApp->mCommunicating1->Send(38, App::mApp->mPackStateOfCharge.SOCPercentage);
+//			break;
+//		case 4:
+//			App::mApp->mCommunicating1->Send(39, App::mApp->mPackBalanceStateOfCharge.BalanceSOC);
+//			App::mApp->mCommunicating1->Send(40, App::mApp->mPackBalanceStateOfCharge.BalanceSOCPercentage);
+//			break;
 		case 5:
 			App::mApp->mCommunicating1->Send(41, App::mApp->mChargerControlInformation.TotalPackCapacity);
 			App::mApp->mCommunicating1->Send(42, App::mApp->mChargerControlInformation.CellTempMargin);
@@ -450,11 +452,82 @@ void StatePrint(Bundle* bundle){
 	}
 }
 
-App::App() : error(0), debugCount(0), arrived(false), PeriodicData(0), PeriodicCmd(0), PeriodicData2(0), PeriodicCmd2(0), trigger(false), Motor1Target(0), Motor2Target(0), Motor3Target(0), mQuaternion(0), mCompass(0), mEncoderYaw(0), PathState(0){
-	Delay::DelayMS(10);
+void StatePrint1(Bundle* bundle){
+	float data;
+	for(int i = 0; i < 6; i++){
+//		App::mApp->mCommunicating1->Send(i+80, MathTools::RadianToDegree(App::mApp->mQuaternion[i]->getEuler()[0]));
+//		App::mApp->mCommunicating1->Send(i+86, App::mApp->mAcceleration[i]->getFilteredAcc()[1]);
+//		App::mApp->mCommunicating1->Send(i+80, MathTools::RadianToDegree(App::mApp->mAcceleration[i]->getAngle()[0]));
+//		App::mApp->mCommunicating1->Send(i+80, MathTools::RadianToDegree(App::mApp->mOmega[i]->getOmega()[0]));
+//		App::mApp->mCommunicating1->Send(i+80, MathTools::RadianToDegree(App::mApp->mMPU6500[i]->getRawOmega()[0]));
+	}
+
+	App::mApp->mCommunicating1->Send(100, 0.667 / App::mApp->mInputCapture->Period1);
+
+
+	data = (float)App::mApp->mTempInfo[0].CellTemp / 10.0f;
+	App::mApp->mCommunicating1->Send(75 + 0, data);
+	data = (float)App::mApp->mTempInfo[1].CellTemp / 10.0f;
+	App::mApp->mCommunicating1->Send(75 + 1, data);
+	data = (float)App::mApp->mTempInfo[2].CellTemp / 10.0f;
+	App::mApp->mCommunicating1->Send(75 + 2, data);
+	data = (float)App::mApp->mTempInfo[3].CellTemp / 10.0f;
+	App::mApp->mCommunicating1->Send(75 + 3, data);
+
+	App::mApp->mCommunicating1->Send(37, App::mApp->mPackStateOfCharge.SOC);
+	App::mApp->mCommunicating1->Send(38, App::mApp->mPackStateOfCharge.SOCPercentage);
+
+	App::mApp->mCommunicating1->Send(39, App::mApp->mPackBalanceStateOfCharge.BalanceSOC);
+	App::mApp->mCommunicating1->Send(40, App::mApp->mPackBalanceStateOfCharge.BalanceSOCPercentage);
+
+	App::mApp->mCommunicating1->Send(54, (float)App::mApp->mMinMaxCellVoltage.MaxCellVoltage / 1000.0f);
+	App::mApp->mCommunicating1->Send(55, (float)App::mApp->mMinMaxCellVoltage.MinCellVoltage / 1000.0f);
+
+	App::mApp->mCommunicating1->Send(60, (float)App::mApp->mBatteryPackVoltageCurrent.BatteryCurrent / 1000.0f);
+	App::mApp->mCommunicating1->Send(61, (float)App::mApp->mBatteryPackVoltageCurrent.BatteryVoltage / 1000.0f);
+}
+
+void initUpdate(Bundle* bundle){
+	for(int i = 0; i < 6; i++){
+		App::mApp->mMPU6500[i]->Update();
+		App::mApp->mAcceleration[i]->Update();
+		App::mApp->mOmega[i]->Update();
+	}
+}
+
+void UpdateTask(Bundle* bundle){
+	for(int i = 0; i < 6; i++){
+		App::mApp->mMPU6500[i]->Update();
+		App::mApp->mAcceleration[i]->Update();
+		App::mApp->mOmega[i]->Update();
+		App::mApp->mQuaternion[i]->Update();
+	}
+}
+
+void PrintTask(Bundle* bundle){
+	App::mApp->mTask->printDeration();
+}
+
+void ResetTask(Bundle* bundle){
+	for(int i = 0; i < 6; i++){
+		App::mApp->InitEuler[i] = App::mApp->mQuaternion[i]->getEuler();
+		App::mApp->mQuaternion[i]->mean[0] = 0;
+		App::mApp->mQuaternion[i]->mean[1] = 0;
+		App::mApp->mQuaternion[i]->mean[2] = 0;
+	}
+	printf("RESETED\r\n");
+}
+
+App::App() : error(0), debugCount(0), arrived(false), PeriodicData(0), PeriodicCmd(0), PeriodicData2(0), PeriodicCmd2(0), trigger(false), Motor1Target(0), Motor2Target(0), Motor3Target(0), mCompass(0), mEncoderYaw(0), PathState(0){
+	Delay::DelayMS(1000);
 	mApp = this;
 	for(int i = 0; i < 16; i++){
 		mExti[i] = 0;
+	}
+
+	for(int i = 0; i < 6; i++){
+		mQuaternion[i] = 0;
+		InitEuler[i].setZero();
 	}
 
 	mConfig = new Config();
@@ -463,9 +536,8 @@ App::App() : error(0), debugCount(0), arrived(false), PeriodicData(0), PeriodicC
 	mTask = new Task();
 
 	mUART4 = new UART(mConfig->UART4Conf1);
-	mCAN1 = new CAN(mConfig->CAN1Conf1);
 
-//	mSpi1 = new Spi(mConfig->Spi1Conf1);
+	mSpi1 = new Spi(mConfig->Spi1Conf1);
 //	mSpi2 = new Spi(mConfig->Spi2Conf1);
 	Com1 = new Com(Com::__UART, (uint32_t)mUART4);
 //	Com2 = new Com(Com::__SPI, (uint32_t)mSpi1, 0);
@@ -519,17 +591,40 @@ App::App() : error(0), debugCount(0), arrived(false), PeriodicData(0), PeriodicC
 //	mTask->Attach(20, CANSend, "CANSend", true);
 //	mTask->Attach(10, CANReceiveTask, "CANReceiveTask", true);
 
-	mTask->Attach(5, SendTask, "SendTask", true);
-	mTask->Attach(5, ReceiveTask, "ReceiveTask", true);
+
+//	for(int i = 0; i < 6; i++){
+//		mMPU6500[i] = new MPU6500(i,mSpi1);
+//		mAcceleration[i] = new Acceleration(mMPU6500[i]);
+//		mOmega[i] = new Omega(mMPU6500[i]);
+//	}
+//	mTask->Attach(2, initUpdate, "initUpdate", false, 1024, false);
+//	mTask->Run();
+//	for(int i = 0; i < 6; i++){
+//		mQuaternion[i] = new Quaternion(mAcceleration[i], mOmega[i]);
+//		mQuaternion[i]->Reset();
+//	}
+//	mTask->Attach(2, UpdateTask, "UpdateTask", false, 4096, false);
+//	Delay::DelayMS(10);
+//	mTask->Run();
+//
+//	for(int i = 0; i < 6; i++){
+//		mQuaternion[i]->Reset();
+//	}
+
+//	mTask->Attach(20, UpdateTask, "UpdateTask", true);
+	mTask->Attach(10, SendTask, "SendTask", true);
+	mTask->Attach(10, ReceiveTask, "ReceiveTask", true);
 	mTask->Attach(100, CANReadTask, "CANReadTask", true);
-	mTask->Attach(20, StatePrint, "StatePrint", true);
+	mTask->Attach(100, StatePrint1, "StatePrint1", true);
+	mTask->Attach(200, StatePrint2, "StatePrint2", true);
+//	mTask->Attach(5000, ResetTask, "ResetTask", false, 1);
 
 //	mGPIO1->GPIOControl(false);
-	mLed1->Blink(mLed1, true, 100);
-	mLed2->Blink(mLed2, true, 250);
-	mLed3->Blink(mLed3, true, 500);
-	mLed4->Blink(mLed4, true, 1000);
+//	mLed1->Blink(mLed1, true, 100);
 	printf("Started\r\n");
+
+	mCAN1 = new CAN(mConfig->CAN1Conf1);
+	mInputCapture = new InputCapture(mConfig->mInputCaptureConf1);
 	mTask->Run(true);
 }
 

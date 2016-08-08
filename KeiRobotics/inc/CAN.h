@@ -29,6 +29,7 @@ namespace Communication{
 	class CAN{
 		public:
 			CAN(CANConfiguration* conf);
+			void StartReceive();
 			int Transmit(uint8_t* data);
 			bool Receive(uint8_t* data);
 			void SendPoll();

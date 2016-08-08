@@ -45,6 +45,8 @@ namespace Math{
 			void setEuler(Vector3f angle);
 			void Reset();
 			Vector4f _Quaternion;
+//			MovingWindowAverageFilter* mean[3];
+			float mean[3];
 
 		private:
 			Acceleration* _mAcceleration;

@@ -48,15 +48,20 @@ uint16_t Ticks::getTimeout(){
 	}
 }
 
+void Ticks::StartWatchDog(){
+	IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
+	IWDG_SetPrescaler(IWDG_Prescaler_256);
+	IWDG_SetReload(250);
+	IWDG_ReloadCounter();
+	IWDG_Enable();
+	OnWatchDog = true;
+}
+
 Ticks::Ticks(bool onWatchDog) : Sec(0), ticks(0), timeoutCount(0), timeoutStartTimestamp(0), OnWatchDog(onWatchDog){
 
 	SysTick_Config(168000);
 	if(onWatchDog){
-		IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
-		IWDG_SetPrescaler(IWDG_Prescaler_256);
-		IWDG_SetReload(250);
-		IWDG_ReloadCounter();
-		IWDG_Enable();
+		StartWatchDog();
 	}
 }
 

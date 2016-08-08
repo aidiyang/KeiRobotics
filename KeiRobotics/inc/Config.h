@@ -19,6 +19,7 @@
 #include <Sonic.h>
 #include <Encoder.h>
 #include <CAN.h>
+#include <InputCapture.h>
 
 using namespace Debug;
 using namespace Communication;
@@ -79,6 +80,7 @@ namespace System{
 			UART::UARTConfiguration* UART5Conf1;
 			UART::UARTConfiguration* UART5Conf2;
 			PWM::PWMConfiguration* mPWMConf1;
+			InputCaptureConfiguration* mInputCaptureConf1;
 			ADConverter::ADCConfiguration* ADCConf1;
 			I2C::I2CConfiguration* I2C1Conf1;
 			I2C::I2CConfiguration* I2C1Conf2;

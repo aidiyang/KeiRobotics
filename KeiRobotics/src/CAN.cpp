@@ -18,7 +18,7 @@ CANConfiguration::CANConfiguration(CANConfx CANx, CANBAUDRATE baudrate, Configur
 
 }
 
-CAN::CAN(CANConfiguration* conf) : AvailablePackageCount(0), AvailablePackage(0), SendLength(0), pTxBuffer(txBuffer), txBufferCount(0), LineFeedCount(0), Conf(conf), BufferCount(0), pBuffer(Buffer), AvailableLength(0){
+CAN::CAN(CANConfiguration* conf) : TxID(0), RxLength(0), TxLength(0), RxID(0), AvailablePackageCount(0), AvailablePackage(0), SendLength(0), pTxBuffer(txBuffer), txBufferCount(0), LineFeedCount(0), Conf(conf), BufferCount(0), pBuffer(Buffer), AvailableLength(0){
 	GPIO_InitTypeDef GPIO_InitStructure;
 	CAN_InitTypeDef CAN_InitStructure;
 	CAN_FilterInitTypeDef CAN_FilterInitStructure;
@@ -39,7 +39,7 @@ CAN::CAN(CANConfiguration* conf) : AvailablePackageCount(0), AvailablePackage(0)
 		NVIC_InitStructure.NVIC_IRQChannel = CAN2_RX0_IRQn;
 	}
 
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
@@ -81,7 +81,6 @@ CAN::CAN(CANConfiguration* conf) : AvailablePackageCount(0), AvailablePackage(0)
 	}
 
 	CAN_DeInit(CANx);
-
 
 	CAN_InitStructure.CAN_Prescaler = prescaler;
 	CAN_InitStructure.CAN_TTCM = DISABLE;
@@ -137,7 +136,7 @@ CAN::CAN(CANConfiguration* conf) : AvailablePackageCount(0), AvailablePackage(0)
 		}
 	}
 	GPIO_PinAFConfig(conf->_rx->_port, _rxSource, GPIO_AF_CANx);
-	CAN_ITConfig(CANx, CAN_IT_FMP0, ENABLE);
+
 	TxMsg.StdId = 0x0;
 	TxMsg.ExtId = 0x00;
 	TxMsg.RTR = CAN_RTR_DATA;
@@ -150,6 +149,12 @@ CAN::CAN(CANConfiguration* conf) : AvailablePackageCount(0), AvailablePackage(0)
 	RxMsg.IDE = CAN_ID_STD;
 	RxMsg.DLC = 0;
 	RxMsg.FMI = 0;
+
+	CAN_ITConfig(CANx, CAN_IT_FMP0, ENABLE);
+}
+
+void CAN::StartReceive(){
+	CAN_ITConfig(CANx, CAN_IT_FMP0, ENABLE);
 }
 
 int CAN::Transmit(uint8_t* data){
@@ -296,18 +301,20 @@ void CAN::Print(const char* pstr, ...)
 }
 
 void CAN1_RX0_IRQHandler(){
-	uint8_t data[App::mApp->mCAN1->RxLength];
-	if(App::mApp->mCAN1->Receive(data)){
-		for(int i = 0; i < App::mApp->mCAN1->RxLength; i++){
-			if(App::mApp->mCAN1->BufferCount >= 2047){
-				App::mApp->mCAN1->BufferCount = 0;
+	if(App::mApp->mCAN1 != 0){
+		uint8_t data[App::mApp->mCAN1->RxLength];
+		if(App::mApp->mCAN1->Receive(data)){
+			for(int i = 0; i < App::mApp->mCAN1->RxLength; i++){
+				if(App::mApp->mCAN1->BufferCount >= 2047){
+					App::mApp->mCAN1->BufferCount = 0;
+				}
+				App::mApp->mCAN1->Buffer[App::mApp->mCAN1->BufferCount++] = data[i];
+				if(data[i] == '\n'){
+					App::mApp->mCAN1->LineFeedCount++;
+				}
 			}
-			App::mApp->mCAN1->Buffer[App::mApp->mCAN1->BufferCount++] = data[i];
-			if(data[i] == '\n'){
-				App::mApp->mCAN1->LineFeedCount++;
-			}
+			App::mApp->mCAN1->AvailableLength += App::mApp->mCAN1->RxLength;
 		}
-		App::mApp->mCAN1->AvailableLength += App::mApp->mCAN1->RxLength;
 	}
 }
 

@@ -59,6 +59,7 @@ PWM::PWM(PWMConfiguration* conf) : Conf(conf), MinPWM(0), MaxPWM(10000){
 			pwm4Source = i;
 		}
 	}
+
 	GPIO_PinAFConfig(conf->_pwm1->_port, pwm1Source, GPIO_AF_TIM9);
 	GPIO_PinAFConfig(conf->_pwm2->_port, pwm2Source, GPIO_AF_TIM9);
 	GPIO_PinAFConfig(conf->_pwm3->_port, pwm3Source, GPIO_AF_TIM12);

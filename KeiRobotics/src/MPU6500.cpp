@@ -16,12 +16,8 @@
 #include <App.h>
 #include <UART.h>
 
-MPU6500* _mMPU6500[6];
-
 MPU6500::MPU6500(int index, Spi* spi) : Sensitivity(SENSITIVITY_2000), DevIndex(index), spix(spi), isValided(false){
-
-	_mMPU6500[index] = this;
-
+	PrevRawOmega.setZero();
 	RawAccPosX = getAccMax(DevIndex, 0);
 	RawAccNegX = getAccMin(DevIndex, 0);
 	RawAccPosY = getAccMax(DevIndex, 1);
@@ -29,12 +25,12 @@ MPU6500::MPU6500(int index, Spi* spi) : Sensitivity(SENSITIVITY_2000), DevIndex(
 	RawAccPosZ = getAccMax(DevIndex, 2);
 	RawAccNegZ = getAccMin(DevIndex, 2);
 
-	RawAccScale[0] = 2.0*GRAVITY / (RawAccPosX - RawAccNegX);
-	RawAccScale[1] = 2.0*GRAVITY / (RawAccPosY - RawAccNegY);
-	RawAccScale[2] = 2.0*GRAVITY / (RawAccPosZ - RawAccNegZ);
-	RawAccOffset[0] = RawAccPosX * RawAccScale[0] - GRAVITY;
-	RawAccOffset[1] = RawAccPosY * RawAccScale[1] - GRAVITY;
-	RawAccOffset[2] = RawAccPosZ * RawAccScale[2] - GRAVITY;
+	RawAccScale[0] = 2.0*Acceleration::Gravity / (RawAccPosX - RawAccNegX);
+	RawAccScale[1] = 2.0*Acceleration::Gravity / (RawAccPosY - RawAccNegY);
+	RawAccScale[2] = 2.0*Acceleration::Gravity / (RawAccPosZ - RawAccNegZ);
+	RawAccOffset[0] = RawAccPosX * RawAccScale[0] - Acceleration::Gravity;
+	RawAccOffset[1] = RawAccPosY * RawAccScale[1] - Acceleration::Gravity;
+	RawAccOffset[2] = RawAccPosZ * RawAccScale[2] - Acceleration::Gravity;
 
 	FastInitialization();
 
@@ -106,7 +102,7 @@ void MPU6500::FastInitialization(){
 	}
 
 	App::mApp->mTicks->setTimeout(3);
-	while(!spix->WriteCmd(DevIndex, CONFIG, 0x00)){
+	while(!spix->WriteCmd(DevIndex, CONFIG, 0x02)){
 		if(App::mApp->mTicks->Timeout()){
 			return;
 		}
@@ -125,11 +121,13 @@ void MPU6500::FastInitialization(){
 			return;
 		}
 	}
-}
 
-MPU6500* MPU6500::getInstance(int index){
-
-	return _mMPU6500[index];
+	App::mApp->mTicks->setTimeout(3);
+	while(!spix->WriteCmd(DevIndex, ACCEL_CONFIG_2, 0x02)){
+		if(App::mApp->mTicks->Timeout()){
+			return;
+		}
+	}
 }
 
 bool MPU6500::Update(){
@@ -165,7 +163,7 @@ bool MPU6500::Update(){
 		if(i >= 0 && i <= 5){
 			int j = i / 2;
 			temp = (data[i + 1] | (data[i] << 8));
-			RawAcc[j] = (float)temp * 0.00048828125f * GRAVITY;
+			RawAcc[j] = (float)temp * 0.00048828125f * Acceleration::Gravity;
 		}
 		else if(i >= 6 && i <= 7){
 			temp = (data[i + 1] | (data[i] << 8));
@@ -177,23 +175,29 @@ bool MPU6500::Update(){
 		}
 	}
 
-	float swap;
-
-	swap = RawAcc[0];
-	RawAcc[0] = -RawAcc[1];
-	RawAcc[1] = swap;
-	RawAcc[2] = -RawAcc[2];
-
-	swap = RawOmega[0];
-	RawOmega[0] = RawOmega[1];
-	RawOmega[1] = -swap;
+	for(int i = 0; i < 3; i++){
+		if((RawAcc[i] != RawAcc[i]) || (RawOmega[i] != RawOmega[i])){
+			isValided = false;
+			return false;
+		}
+	}
 
 	for(int i = 0; i < 3; i++){
 		RawAcc[i] *= RawAccScale[i];
 		RawAcc[i] -= RawAccOffset[i];
-		RawOmega[i] -= getGyroTemperatureCompensation(DevIndex, i, temperature);
-		RawOmega[i] = MathTools::CutOff(RawOmega[i], 0.0f, 2.0f);
+//		RawOmega[i] -= getGyroTemperatureCompensation(DevIndex, i, temperature);
+//		RawOmega[i] = MathTools::CutOff(RawOmega[i], 0.0f, 2.0f);
+
+//		if(fabs(RawOmega[i] - PrevRawOmega[i]) > 1500.0f){
+//			RawOmega[i] = PrevRawOmega[i];
+//			isValided = false;
+//			return false;
+//		}
+//		else{
+//			PrevRawOmega[i] = RawOmega[i];
+//		}
 	}
+
 
 	isValided = true;
 	return true;
@@ -205,39 +209,39 @@ float MPU6500::getGyroTemperatureCompensation(int index, int channel, float temp
 		case 0:
 			switch(channel){
 				case 0:
-					value = 0.0005f*temp*temp - 0.0799f*temp + 12.212f;
+					value = -40.0f;//-1.5f;//-4.5f;//0.0005f*temp*temp - 0.0799f*temp + 12.212f;
 					break;
 				case 1:
-					value = -0.0002f*temp*temp - 0.0039f*temp + 4.6503f;
+					value = 6.0f;//9.0f;//-0.0002f*temp*temp - 0.0039f*temp + 4.6503f;
 					break;
 				case 2:
-					value = 0.00007*temp*temp + 0.0047f*temp - 0.8594f;
+					value = -0.3f;//0.00007*temp*temp + 0.0047f*temp - 0.8594f;
 					break;
 			}
 			break;
 		case 1:
 			switch(channel){
 				case 0:
-					value = 0.001f*temp*temp - 0.0992f*temp + 6.6046f;
+					value = -10.0f;//-0.7f;//-0.6f;//0.001f*temp*temp - 0.0992f*temp + 6.6046f;
 					break;
 				case 1:
-					value = 0.00002f*temp*temp + 0.032f*temp - 0.3928f;
+					value = 8.0f;//3.9f;//0.00002f*temp*temp + 0.032f*temp - 0.3928f;
 					break;
 				case 2:
-					value = 0.00006f*temp*temp + 0.0005f*temp - 0.0949f;
+					value = -0.33f;//0.00006f*temp*temp + 0.0005f*temp - 0.0949f;
 					break;
 			}
 			break;
 		case 2:
 			switch(channel){
 				case 0:
-					value = 0.0011f*temp*temp - 0.1f*temp + 7.0212f;
+					value = -164.0f;//0.0011f*temp*temp - 0.1f*temp + 7.0212f;
 					break;
 				case 1:
-					value = -0.0001f*temp*temp + 0.0083f*temp + 0.9077f;
+					value = 5.5f;//-0.0001f*temp*temp + 0.0083f*temp + 0.9077f;
 					break;
 				case 2:
-					value = -0.00004f*temp*temp + 0.0015f*temp - 0.5488f;
+					value = -0.43f;//-0.00004f*temp*temp + 0.0015f*temp - 0.5488f;
 					break;
 			}
 			break;
@@ -257,23 +261,23 @@ float MPU6500::getGyroTemperatureCompensation(int index, int channel, float temp
 		case 4:
 			switch(channel){
 				case 0:
-					value = 0.0003f*temp*temp - 0.0176f*temp + 3.6351f;
+					value = -100.3f;////0.1f;//0.0003f*temp*temp - 0.0176f*temp + 3.6351f;
 					break;
 				case 1:
-					value = -0.00005f*temp*temp + 0.0242f*temp - 0.9812f;
+					value = 5.0f;//4.3f;//-0.00005f*temp*temp + 0.0242f*temp - 0.9812f;
 					break;
 				case 2:
-					value = -0.00005f*temp*temp + 0.0199f*temp - 1.1762f;
+					value = 0.16f;//-0.00005f*temp*temp + 0.0199f*temp - 1.1762f;
 					break;
 			}
 			break;
 		case 5:
 			switch(channel){
 				case 0:
-					value = 0.0009f*temp*temp - 0.1001f*temp + 4.3651f;
+					value = 22.0f;////4.8f;//0.3f;//0.0009f*temp*temp - 0.1001f*temp + 4.3651f;
 					break;
 				case 1:
-					value = -0.0001f*temp*temp + 0.0385f*temp - 2.0141f;
+					value = -7.0f;//-0.0001f*temp*temp + 0.0385f*temp - 2.0141f;
 					break;
 				case 2:
 					value = -0.00004f*temp*temp + 0.0036f*temp + 1.1112f;
@@ -466,26 +470,26 @@ float MPU6500::getTemperature(){
 	return temperature;
 }
 
-void MPU6500::setRawOmegaOffset(int index, float value){
-	RawOmegaOffset[index] = value;
+void MPU6500::setRawOmegaOffset(Vector3f value){
+	RawOmegaOffset = value;
 }
 
-float MPU6500::getRawOmegaOffset(int index){
-	return RawOmegaOffset[index];
+Vector3f MPU6500::getRawOmegaOffset(){
+	return RawOmegaOffset;
 }
 
-void MPU6500::setRawOmega(int index, float value){
-	RawOmega[index] = value;
+void MPU6500::setRawOmega(Vector3f value){
+	RawOmega = value;
 }
 
-float MPU6500::getRawOmega(int index){
-	return RawOmega[index];
+Vector3f MPU6500::getRawOmega(){
+	return RawOmega;
 }
 
-void MPU6500::setRawAcc(int index, float value){
-	RawAcc[index] = value;
+void MPU6500::setRawAcc(Vector3f value){
+	RawAcc = value;
 }
 
-float MPU6500::getRawAcc(int index){
-	return RawAcc[index];
+Vector3f MPU6500::getRawAcc(){
+	return RawAcc;
 }

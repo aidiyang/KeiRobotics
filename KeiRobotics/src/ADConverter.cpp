@@ -13,11 +13,12 @@ ADConverter::ADCConfiguration::ADCConfiguration(Configuration* adc, uint8_t ADCC
 };
 
 ADConverter::ADConverter(ADCConfiguration* conf) : Conf(conf){
-	ADC_InitTypeDef       ADC_InitStructure;
+	ADC_InitTypeDef ADC_InitStructure;
 	ADC_CommonInitTypeDef ADC_CommonInitStructure;
-	DMA_InitTypeDef       DMA_InitStructure;
+	DMA_InitTypeDef DMA_InitStructure;
 	GPIO_InitTypeDef GPIO_InitStructure;
 
+	ADC_DeInit();
 	RCC_AHB1PeriphClockCmd(conf->_adc->_rcc, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);

@@ -9,6 +9,11 @@
 #define  MPU6500_H_
 
 #include <Spi.h>
+#include <Acceleration.h>
+#include <Eigen/Eigen>
+using Eigen::Vector3f;
+
+using namespace Communication;
 
 namespace Sensors{
 
@@ -16,7 +21,6 @@ namespace Sensors{
 		public:
 
 			enum SENSITIVITY{SENSITIVITY_250, SENSITIVITY_500, SENSITIVITY_1000, SENSITIVITY_2000};
-			enum DEV{DEV1, DEV2, DEV3, DEV4, DEV5, DEV6};
 			enum REG{SELF_TEST_X_GYRO = 0x00,
 					 SELF_TEST_Y_GYRO = 0x01,
 					 SELF_TEST_Z_GYRO = 0x02,
@@ -120,32 +124,32 @@ namespace Sensors{
 					 ZA_OFFSET_L = 0x7E};
 
 			MPU6500(int index, Spi* spi);
-			static MPU6500* getInstance(int index);
 			bool Update();
 			void setSensitivity(SENSITIVITY value);
-			void setTemperature(float);
+			void setTemperature(float value);
 			float getTemperature();
-			void setRawAcc(int, float);
-			float getRawAcc(int);
-			void setRawAccOffset(int, float);
-			float getRawAccOffset(int);
-			void setRawAccScale(int, float);
-			float getRawAccScale(int);
-			void setRawOmega(int, float);
-			float getRawOmega(int);
-			void setRawOmegaOffset(int, float);
-			float getRawOmegaOffset(int);
+			void setRawAcc(Vector3f value);
+			Vector3f getRawAcc();
+			void setRawAccOffset(Vector3f value);
+			Vector3f getRawAccOffset();
+			void setRawAccScale(Vector3f value);
+			Vector3f getRawAccScale();
+			void setRawOmega(Vector3f value);
+			Vector3f getRawOmega();
+			void setRawOmegaOffset(Vector3f value);
+			Vector3f getRawOmegaOffset();
 			bool getIsValided();
 
 		private:
 			Spi* spix;
 			int DevIndex;
 			bool isValided;
-			float RawAcc[3];
-			float RawAccOffset[3];
-			float RawAccScale[3];
-			float RawOmega[3];
-			float RawOmegaOffset[3];
+			Vector3f RawAcc;
+			Vector3f RawAccOffset;
+			Vector3f RawAccScale;
+			Vector3f RawOmega;
+			Vector3f PrevRawOmega;
+			Vector3f RawOmegaOffset;
 			float temperature;
 			float RawAccPosX;
 			float RawAccNegX;
