@@ -16,6 +16,9 @@ using namespace Utility;
 App* App::mApp = 0;
 Ticks* App::mTicks = 0;
 Task* App::mTask = 0;
+UART* App::mUART1 = 0;
+UART* App::mUART2 = 0;
+UART* App::mUART3 = 0;
 UART* App::mUART4 = 0;
 Spi* App::mSpi1 = 0;
 Spi* App::mSpi2 = 0;
@@ -26,28 +29,13 @@ Communicating* App::mCommunicating3 = 0;
 Com* App::Com1 = 0;
 Com* App::Com2 = 0;
 Com* App::Com3 = 0;
+nRF24L01* App::mnRF24L01 = 0;
+int App::DeviceIndex = 0;
 
-//void ControlTask(){
-////	App::mApp->mControlling->ControllingPoll();
-//
-//	float value = App::mApp->Motor1PID->pid(0, App::mApp->mQuaternion->getEuler()[2]);
-//	if(value == value){
-//
-//		App::mApp->error += value;
-//		App::mApp->error = MathTools::Trim(-10000, App::mApp->error, 10000);
-//		if(App::mApp->error < 0){
-//			App::mApp->mGPIO1->GPIOControl(false);
-//		}
-//		else{
-//			App::mApp->mGPIO1->GPIOControl(true);
-//		}
-//		if(MathTools::CheckWithInInterval(MathTools::RadianToDegree(fabs(App::mApp->mQuaternion->getEuler()[2])), 0, 3)){
-//			App::mApp->error = 0;
-//		}
-//		App::mApp->mPWM->Control1(fabs(App::mApp->error));
-//	}
-//}
-//
+void ControlTask(Bundle* bundle){
+	App::mApp->mControlling->ControllingPoll();
+}
+
 
 //
 //void initCompassUpdate(){
@@ -88,60 +76,103 @@ void CompassUpdate(){
 }
 
 void App::ReceiveTask(Bundle* bundle){
+	mnRF24L01->ReceivePoll();
 	mCommunicating1->ReceivePoll();
-//	mCommunicating2->ReceivePoll();
-//	mCommunicating3->ReceivePoll();
+	mCommunicating2->ReceivePoll();
 }
 
 void App::SendTask(Bundle* bundle){
 	mCommunicating1->SendPoll();
-//	mCommunicating2->SendPoll();
-//	mCommunicating3->SendPoll();
+	mCommunicating2->SendPoll();
 }
 
-//void print(){
-//	static int index = 0;
-//	switch(App::mApp->mCommunicating1->PrintType){
-//		case 0:
-//			if(index < 3){
-//				if(index == 0){
-//					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index])));// - App::mApp->mControlling->RollOffset));
-//				}
-//				else if(index == 1){
-//					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index])));// - App::mApp->mControlling->PitchOffset));
-//				}
-//				else if(index == 2){
-//					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index])));// - App::mApp->mControlling->YawOffset));
-//				}
-//			}
-//			break;
-//		case 1:
-//			if(index < 3){
-//				App::mApp->mCommunicating1->Send(index, (float)(App::mApp->mMPU6050->getRawOmega()[index]));
-//			}
-//			break;
-//		case 2:
-//			if(index == 0){
-//				App::mApp->mCommunicating1->Send(0, App::mApp->mControlling->Motor1PWM);
-//			}
-//			else if(index == 1){
-//				App::mApp->mCommunicating1->Send(1, App::mApp->mControlling->Motor2PWM);
-//			}
-//			else if(index == 2){
-//				App::mApp->mCommunicating1->Send(2, App::mApp->mControlling->Motor3PWM);
-//			}
-//			else if(index == 3){
-//				App::mApp->mCommunicating1->Send(3, App::mApp->mControlling->Motor4PWM);
-//			}
-//			break;
-//	}
-//	if(index == 4){
-//		index = 0;
-//	}
-//	else{
-//		index++;
-//	}
-//}
+void printRF(Bundle* bundle){
+	static int index = 0;
+	switch(App::mApp->mCommunicating2->PrintType){
+		case 0:
+			if(index < 3){
+				if(index == 0){
+					App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->RollOffset));
+				}
+				else if(index == 1){
+					App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->PitchOffset));
+				}
+				else if(index == 2){
+					App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->YawOffset));
+				}
+			}
+			break;
+		case 1:
+			if(index < 3){
+				App::mApp->mCommunicating2->Send(index, (float)(App::mApp->mMPU6050->getRawOmega()[index]));
+			}
+			break;
+		case 2:
+			if(index == 0){
+				App::mApp->mCommunicating2->Send(0, App::mApp->mControlling->Motor1PWM);
+			}
+			else if(index == 1){
+				App::mApp->mCommunicating2->Send(1, App::mApp->mControlling->Motor2PWM);
+			}
+			else if(index == 2){
+				App::mApp->mCommunicating2->Send(2, App::mApp->mControlling->Motor3PWM);
+			}
+			else if(index == 3){
+				App::mApp->mCommunicating2->Send(3, App::mApp->mControlling->Motor4PWM);
+			}
+			break;
+	}
+	if(index == 4){
+		index = 0;
+	}
+	else{
+		index++;
+	}
+}
+
+void print(Bundle* bundle){
+	static int index = 0;
+	switch(App::mApp->mCommunicating1->PrintType){
+		case 0:
+			if(index < 3){
+				if(index == 0){
+					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->RollOffset));
+				}
+				else if(index == 1){
+					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->PitchOffset));
+				}
+				else if(index == 2){
+					App::mApp->mCommunicating1->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->YawOffset));
+				}
+			}
+			break;
+		case 1:
+			if(index < 3){
+				App::mApp->mCommunicating1->Send(index, (float)(App::mApp->mMPU6050->getRawOmega()[index]));
+			}
+			break;
+		case 2:
+			if(index == 0){
+				App::mApp->mCommunicating1->Send(0, App::mApp->mControlling->Motor1PWM);
+			}
+			else if(index == 1){
+				App::mApp->mCommunicating1->Send(1, App::mApp->mControlling->Motor2PWM);
+			}
+			else if(index == 2){
+				App::mApp->mCommunicating1->Send(2, App::mApp->mControlling->Motor3PWM);
+			}
+			else if(index == 3){
+				App::mApp->mCommunicating1->Send(3, App::mApp->mControlling->Motor4PWM);
+			}
+			break;
+	}
+	if(index == 4){
+		index = 0;
+	}
+	else{
+		index++;
+	}
+}
 
 void BatteryPrint(){
 	App::mApp->mADCFilter->Update(App::mApp->mADC->getReading() * 3.3 / 4096.0);
@@ -172,26 +203,21 @@ void Task100Hz(Bundle* bundle){
 //	SendTask();
 }
 
-void Task500Hz(Bundle* bundle){
-//	UpdateTask();
-//	ControlTask();
-//	ControlTask();
-//	ReceiveTask();
-//	SendTask();
+void UpdateTask(Bundle* bundle){
+	App::mApp->mMPU6050->Update();
+	App::mApp->mAcceleration->Update();
+	App::mApp->mOmega->Update();
+	App::mApp->mQuaternion->Update();
+}
+
+void Task250Hz(Bundle* bundle){
 }
 void Task30Hz(Bundle* bundle){
-	App::mApp->mCommunicating1->Send(0, App::mApp->mSonic1->Distance);
-	App::mApp->mCommunicating1->Send(1, App::mApp->mSonic2->Distance);
-//	printf("%g,%g,%g,%g\r\n", App::mApp->mSonic1->Distance, App::mApp->mSonic2->Distance, App::mApp->mSonic3->Distance, App::mApp->mSonic4->Distance);
 }
 
 void Task50Hz(Bundle* bundle){
-//	App::mApp->mCommunicating1->Send(0, App::mApp->error);// - App::mApp->mControlling->RollOffset));
-//	print();
-	App::mApp->mSonic1->Update();
-	App::mApp->mSonic2->Update();
-	App::mApp->mSonic3->Update();
-	App::mApp->mSonic4->Update();
+	App::mApp->ReceiveTask(bundle);
+	App::mApp->SendTask(bundle);
 }
 
 void App::SPITest(Bundle* bundle){
@@ -459,7 +485,7 @@ void StatePrint1(Bundle* bundle){
 //		App::mApp->mCommunicating1->Send(i+86, App::mApp->mAcceleration[i]->getFilteredAcc()[1]);
 //		App::mApp->mCommunicating1->Send(i+80, MathTools::RadianToDegree(App::mApp->mAcceleration[i]->getAngle()[0]));
 //		App::mApp->mCommunicating1->Send(i+80, MathTools::RadianToDegree(App::mApp->mOmega[i]->getOmega()[0]));
-//		App::mApp->mCommunicating1->Send(i+80, MathTools::RadianToDegree(App::mApp->mMPU6500[i]->getRawOmega()[0]));
+		App::mApp->mCommunicating1->Send(i+80, MathTools::RadianToDegree(App::mApp->mMPU6500[i]->getRawOmega()[0]));
 	}
 
 	App::mApp->mCommunicating1->Send(100, 0.667 / App::mApp->mInputCapture->Period1);
@@ -488,148 +514,132 @@ void StatePrint1(Bundle* bundle){
 }
 
 void initUpdate(Bundle* bundle){
-	for(int i = 0; i < 6; i++){
-		App::mApp->mMPU6500[i]->Update();
-		App::mApp->mAcceleration[i]->Update();
-		App::mApp->mOmega[i]->Update();
-	}
+	App::mApp->mMPU6050->Update();
+	App::mApp->mAcceleration->Update();
+	App::mApp->mOmega->Update();
 }
 
-void UpdateTask(Bundle* bundle){
-	for(int i = 0; i < 6; i++){
-		App::mApp->mMPU6500[i]->Update();
-		App::mApp->mAcceleration[i]->Update();
-		App::mApp->mOmega[i]->Update();
-		App::mApp->mQuaternion[i]->Update();
-	}
-}
 
 void PrintTask(Bundle* bundle){
 	App::mApp->mTask->printDeration();
 }
 
-void ResetTask(Bundle* bundle){
-	for(int i = 0; i < 6; i++){
-		App::mApp->InitEuler[i] = App::mApp->mQuaternion[i]->getEuler();
-		App::mApp->mQuaternion[i]->mean[0] = 0;
-		App::mApp->mQuaternion[i]->mean[1] = 0;
-		App::mApp->mQuaternion[i]->mean[2] = 0;
+void SelectPrintRF(Bundle* bundle){
+	static int index = 0;
+	App::mApp->mnRF24L01->TxChannel = App::mApp->Channel[index+1];
+	if(index == 0){
+		App::mApp->mCommunicating2->Send(Communicating::DEV1FB, 0);
 	}
-	printf("RESETED\r\n");
+	else if(index == 1){
+		App::mApp->mCommunicating2->Send(Communicating::DEV2FB, 0);
+	}
+	else if(index == 2){
+		App::mApp->mCommunicating2->Send(Communicating::DEV3FB, 0);
+	}
+	else if(index == 3){
+		App::mApp->mCommunicating2->Send(Communicating::DEV4FB, 0);
+	}
+	if(index == 3){
+		index = 0;
+	}
+	else{
+		index++;
+	}
 }
 
-App::App() : error(0), debugCount(0), arrived(false), PeriodicData(0), PeriodicCmd(0), PeriodicData2(0), PeriodicCmd2(0), trigger(false), Motor1Target(0), Motor2Target(0), Motor3Target(0), mCompass(0), mEncoderYaw(0), PathState(0){
-	Delay::DelayMS(1000);
+void App::AppInit(){
+
+	Delay::DelayMS(100);
 	mApp = this;
 	for(int i = 0; i < 16; i++){
 		mExti[i] = 0;
 	}
-
-	for(int i = 0; i < 6; i++){
-		mQuaternion[i] = 0;
-		InitEuler[i].setZero();
-	}
-
+	mQuaternion = 0;
 	mConfig = new Config();
 
-	mTicks = new Ticks(true);
+	mTicks = new Ticks(false);
 	mTask = new Task();
-
-	mUART4 = new UART(mConfig->UART4Conf1);
-
-	mSpi1 = new Spi(mConfig->Spi1Conf1);
-//	mSpi2 = new Spi(mConfig->Spi2Conf1);
-	Com1 = new Com(Com::__UART, (uint32_t)mUART4);
-//	Com2 = new Com(Com::__SPI, (uint32_t)mSpi1, 0);
-//	Com3 = new Com(Com::__SPI, (uint32_t)mSpi2, 0);
-	mCommunicating1 = new Communicating(Com1);
-//	mCommunicating2 = new Communicating(Com2);
-//	mCommunicating3 = new Communicating(Com3);
+	mUART1 = new UART(mConfig->UART1Conf1);
 	mLed1 = new GPIO(mConfig->GPIO1Conf1);
 	mLed2 = new GPIO(mConfig->GPIO2Conf1);
-	mLed3 = new GPIO(mConfig->GPIO3Conf1);
-	mLed4 = new GPIO(mConfig->GPIO4Conf1);
-//	mLed4 = new GPIO(mConfig->GPIO4Conf1);
-//	mSonic1 = new Sonic(mConfig->SonicConf1);
-//	mSonic2 = new Sonic(mConfig->SonicConf2);
-//	mSonic3 = new Sonic(mConfig->SonicConf3);
-//	mSonic4 = new Sonic(mConfig->SonicConf4);
-//	mTask->Attach(20, SPITest, "SPITest", true);
-//	mTask->Attach(1000, Print, "Print", true);
-//	mTask->Run(true);
-//
-//	mUART4 = new UART(mConfig->UART4Conf1);
-//	mCommunicating1 = new Communicating(new Communicating::Com(Communicating::Com::__UART, (uint32_t)mUART4));
-//
-//	mPWM = new PWM(mConfig->mPWMConf1);
-//	Motor1PID = new Pid(8000,0,0,10000);
-//	//	mGPIO1 = new GPIO(mConfig->GPIO2Conf1);
-//	App::mApp->mPWM->Control1(0);
-//	App::mApp->mPWM->Control2(0);
-//	App::mApp->mPWM->Control3(0);
-//	App::mApp->mPWM->Control4(0);
-////
-////	mControlling = new Controlling(mPWM);
-////
-//	mI2C1 = new I2C(mConfig->I2C1Conf2);
-//	mMPU6050 = new MPU6050(mI2C1);
-//	mAcceleration = new Acceleration(mMPU6050);
-//	mOmega = new Omega(mMPU6050);
-//	mTask->Attach(2, initUpdate, "initUpdate", false, 512, false);
-//
-//	Delay::DelayMS(10);
-//	mTask->Run();
-//	mQuaternion = new Quaternion(mAcceleration, mOmega);
-//	mQuaternion->Reset();
-//	mTask->Attach(10, SendTask, "SendTask", true);
-//	mTask->Attach(10, ReceiveTask, "ReceiveTask", true);
-////	mTask->Attach(2, Task500Hz, "Task500Hz", true);
-////	mTask->Attach(20, Task50Hz, "Task50Hz", true);
-//	mTask->Attach(20, Task50Hz, "Task50Hz", true);
-//	mTask->Attach(33, Task30Hz, "Task30Hz", true);
-//	mTask->Attach(10, CANSendTask, "CANSendTask", true);
-//	mTask->Attach(20, CANSend, "CANSend", true);
-//	mTask->Attach(10, CANReceiveTask, "CANReceiveTask", true);
-
-
-//	for(int i = 0; i < 6; i++){
-//		mMPU6500[i] = new MPU6500(i,mSpi1);
-//		mAcceleration[i] = new Acceleration(mMPU6500[i]);
-//		mOmega[i] = new Omega(mMPU6500[i]);
-//	}
-//	mTask->Attach(2, initUpdate, "initUpdate", false, 1024, false);
-//	mTask->Run();
-//	for(int i = 0; i < 6; i++){
-//		mQuaternion[i] = new Quaternion(mAcceleration[i], mOmega[i]);
-//		mQuaternion[i]->Reset();
-//	}
-//	mTask->Attach(2, UpdateTask, "UpdateTask", false, 4096, false);
-//	Delay::DelayMS(10);
-//	mTask->Run();
-//
-//	for(int i = 0; i < 6; i++){
-//		mQuaternion[i]->Reset();
-//	}
-
-//	mTask->Attach(20, UpdateTask, "UpdateTask", true);
-	mTask->Attach(10, SendTask, "SendTask", true);
-	mTask->Attach(10, ReceiveTask, "ReceiveTask", true);
-	mTask->Attach(100, CANReadTask, "CANReadTask", true);
-	mTask->Attach(100, StatePrint1, "StatePrint1", true);
-	mTask->Attach(200, StatePrint2, "StatePrint2", true);
-//	mTask->Attach(5000, ResetTask, "ResetTask", false, 1);
-
-//	mGPIO1->GPIOControl(false);
-//	mLed1->Blink(mLed1, true, 100);
+	mLed1->Blink(mLed1,true,2000);
 	printf("Started\r\n");
+}
 
-	mCAN1 = new CAN(mConfig->CAN1Conf1);
-	mInputCapture = new InputCapture(mConfig->mInputCaptureConf1);
+App::App() : error(0), debugCount(0), arrived(false), PeriodicData(0), PeriodicCmd(0), PeriodicData2(0), PeriodicCmd2(0), trigger(false), Motor1Target(0), Motor2Target(0), Motor3Target(0), mCompass(0), mEncoderYaw(0), PathState(0){
+
+	AppInit();
+	DeviceIndex = 0;
+	Channel = new uint8_t[5];
+	Channel[0] = 0x6e;
+	Channel[1] = 0x3e;
+	Channel[2] = 0x1e;
+	Channel[3] = 0x0e;
+	Channel[4] = 0x5e;
+	Com1 = new Com(Com::__UART, (uint32_t)mUART1);
+	mCommunicating1 = new Communicating(Com1);
+	mPWM = new PWM(mConfig->mPWMConf1);
+	App::mApp->mPWM->Control1(0);
+	App::mApp->mPWM->Control2(0);
+	App::mApp->mPWM->Control3(0);
+	App::mApp->mPWM->Control4(0);
+	mControlling = new Controlling(mPWM);
+
+	mSpi1 = new Spi(mConfig->Spi1Conf1);
+	mCE = new GPIO(mConfig->GPIO3Conf1);
+	mIRQ = new GPIO(mConfig->GPIO4Conf1);
+	uint8_t RxAddr[5] = {'H','E','L','L','O'};
+	uint8_t TxAddr[5] = {'H','E','L','L','O'};
+	if(DeviceIndex == 0){
+		nRF24L01Conf = new nRF24L01Configuration(mSpi1, 0, mCE, mIRQ, 5, 5, TxAddr, RxAddr, Channel[1], Channel[0]);
+	}
+	else if(DeviceIndex == 1){
+		nRF24L01Conf = new nRF24L01Configuration(mSpi1, 0, mCE, mIRQ, 5, 5, TxAddr, RxAddr, Channel[0], Channel[1]);
+	}
+	else if(DeviceIndex == 2){
+		nRF24L01Conf = new nRF24L01Configuration(mSpi1, 0, mCE, mIRQ, 5, 5, TxAddr, RxAddr, Channel[0], Channel[2]);
+	}
+	else if(DeviceIndex == 3){
+		nRF24L01Conf = new nRF24L01Configuration(mSpi1, 0, mCE, mIRQ, 5, 5, TxAddr, RxAddr, Channel[0], Channel[3]);
+	}
+	else if(DeviceIndex == 4){
+		nRF24L01Conf = new nRF24L01Configuration(mSpi1, 0, mCE, mIRQ, 5, 5, TxAddr, RxAddr, Channel[0], Channel[4]);
+	}
+	mnRF24L01= new nRF24L01(nRF24L01Conf);
+
+	Com2 = new Com(Com::__RF, (uint32_t)mnRF24L01);
+	mCommunicating2 = new Communicating(Com2);
+	mI2C1 = new I2C(mConfig->I2C2Conf1);
+	Vector3f AccPos;
+	AccPos << 1,1,1;
+	AccPos*=Acceleration::Gravity;
+	Vector3f AccNeg;
+	AccNeg << 1,1,1;;
+	AccNeg*=-Acceleration::Gravity;
+	Vector3f OmegaScale;
+	OmegaScale << 1,1,1;;
+	Vector3f OmegaOffset;
+	OmegaOffset << 8.9,1.8,0.8;
+	if(DeviceIndex != 0){
+		mMPU6050Config = new MPU6050Configuration(mI2C1, AccPos, AccNeg, OmegaScale, OmegaOffset);
+		mMPU6050 = new MPU6050(mMPU6050Config);
+		mAcceleration = new Acceleration(mMPU6050);
+		mOmega = new Omega(mMPU6050);
+
+		mQuaternion = new Quaternion(mAcceleration, mOmega);
+		mQuaternion->Reset();
+		mTask->Attach(20, UpdateTask, "UpdateTask", true);
+	}
+//	mTask->Attach(20, ControlTask, "ControlTask", true);
+	mTask->Attach(20, ReceiveTask, "ReceiveTask", true);
+	mTask->Attach(20, SendTask, "SendTask", true);
+	if(DeviceIndex == 0){
+		mTask->Attach(100, SelectPrintRF, "SelectPrintRF", true);
+	}
+//	mTask->Attach(20, print, "print", true);
+//	mTask->Attach(40, printRF, "printRF", true);
+
 	mTask->Run(true);
 }
 
-void HardFault_Handler(){
-	printf("HF:%s:%d\r\n", App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->TaskName.c_str(), App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->duration[1] - App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->duration[0]);
-	App::mTicks->PrintTime();
-	while(true);
-}
+

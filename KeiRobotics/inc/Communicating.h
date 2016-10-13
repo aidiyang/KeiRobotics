@@ -29,16 +29,18 @@
 #include <stm32f4xx_rcc.h>
 #include <MPU6050.h>
 #include <Spi.h>
+#include <nRF24L01.h>
 
 namespace Communication{
 
 	class Com{
 		public:
-			enum Interface{__UART, __SPI, __I2C};
+			enum Interface{__UART, __SPI, __RF};
 			Com(Interface interface, uint32_t addr, int index = 0);
 			Interface _interface;
 			UART* _UART;
 			Spi* _Spi;
+			nRF24L01* _nRF24L01;
 			int Index;
 //				I2C* _I2C;
 		private:
@@ -127,7 +129,11 @@ namespace Communication{
 				CLAMPER_WATCHDOG_RUN,
 				CLAMPER_SET_HORIZONTAL_RUN,
 				AUTO_MODE,
-				NEXT
+				NEXT,
+				DEV1FB,
+				DEV2FB,
+				DEV3FB,
+				DEV4FB
 			};
 
 			Communicating(Com* com);

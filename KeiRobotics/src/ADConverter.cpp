@@ -9,7 +9,7 @@
 
 using namespace Sensors;
 
-ADConverter::ADCConfiguration::ADCConfiguration(Configuration* adc, uint8_t ADCChannel, uint8_t ADCCycles) : _adc(adc), _ADCChannel(ADCChannel), _ADCCycles(ADCCycles){
+ADCConfiguration::ADCConfiguration(Configuration* adc, uint8_t ADCChannel, uint8_t ADCCycles, ADCMode mode) : Mode(mode), _adc(adc), _ADCChannel(ADCChannel), _ADCCycles(ADCCycles){
 };
 
 ADConverter::ADConverter(ADCConfiguration* conf) : Conf(conf){
@@ -29,23 +29,25 @@ ADConverter::ADConverter(ADCConfiguration* conf) : Conf(conf){
 	GPIO_Init(conf->_adc->_port, &GPIO_InitStructure);
 
 	DMA_DeInit(DMA2_Stream0);
-	DMA_InitStructure.DMA_Channel = DMA_Channel_0;
-	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)0x4001204C;
-	DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&_ADCData;
-	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
-	DMA_InitStructure.DMA_BufferSize = 1;
-	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Disable;
-	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
-	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
-	DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-	DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-	DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;
-	DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_HalfFull;
-	DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
-	DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-	DMA_Init(DMA2_Stream0, &DMA_InitStructure);
-	DMA_Cmd(DMA2_Stream0, ENABLE);
+	if(conf->Mode == ADCConfiguration::FreeRun){
+		DMA_InitStructure.DMA_Channel = DMA_Channel_0;
+		DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)0x4001204C;
+		DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&_ADCData;
+		DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
+		DMA_InitStructure.DMA_BufferSize = 1;
+		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+		DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Disable;
+		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
+		DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
+		DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+		DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;
+		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_HalfFull;
+		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+		DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+		DMA_Init(DMA2_Stream0, &DMA_InitStructure);
+		DMA_Cmd(DMA2_Stream0, ENABLE);
+	}
 
 	ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;
 	ADC_CommonInitStructure.ADC_Prescaler = ADC_Prescaler_Div8;
@@ -55,7 +57,12 @@ ADConverter::ADConverter(ADCConfiguration* conf) : Conf(conf){
 
 	ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
 	ADC_InitStructure.ADC_ScanConvMode = DISABLE;
-	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
+	if(conf->Mode == ADCConfiguration::FreeRun){
+		ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
+	}
+	else{
+		ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
+	}
 	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
 	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
@@ -70,6 +77,18 @@ ADConverter::ADConverter(ADCConfiguration* conf) : Conf(conf){
 }
 
 double ADConverter::getReading(){
-	return _ADCData;
+	if(Conf->Mode == ADCConfiguration::FreeRun){
+		return _ADCData;
+	}
+	else{
+		ADC_SoftwareStartConv(ADC1);
+		App::mApp->mTicks->setTimeout(3);
+		while(ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET){
+			if(App::mApp->mTicks->Timeout()){
+				return -1.0f;
+			}
+		}
+		return (float)ADC_GetConversionValue(ADC1);
+	}
 }
 

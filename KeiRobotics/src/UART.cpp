@@ -40,51 +40,51 @@ void DMA2_Stream7_IRQHandler(void)
 	}
 }
 
-void DMA1_Stream3_IRQHandler(void)
-{
-	if(DMA_GetITStatus(DMA1_Stream3, DMA_IT_TCIF3) == SET)
-	{
-		DMA_ClearITPendingBit (DMA1_Stream3, DMA_IT_TCIF3);
-		DMA_Cmd(DMA1_Stream3, DISABLE);
-		App::mApp->mTicks->setTimeout(3);
-		while (USART_GetFlagStatus(USART3,USART_FLAG_TC)==RESET){
-			if(App::mApp->mTicks->Timeout()){
-				break;
-			}
-		}
-		USART_ClearFlag(USART3,USART_FLAG_TC);
-		App::mApp->mUART3->isDmaBusy = false;//setIsDmaBusy(false);
-	}
-}
-
-void DMA1_Stream1_IRQHandler(void)
-{
-	if(DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1) == SET)
-	{
-		DMA_ClearITPendingBit (DMA1_Stream1, DMA_IT_TCIF1);
-		DMA_Cmd(DMA1_Stream1, DISABLE);
-		App::mApp->mTicks->setTimeout(3);
-		while(USART_GetFlagStatus(USART3, USART_FLAG_RXNE) == SET){
-			if(App::mApp->mTicks->Timeout()){
-				break;
-			}
-		}
-		for(int i = 0; i < 5; i++){
-//			App::mApp->mUART3->getBuffer()[App::mApp->mUART3->getBufferCount()] = App::mApp->mUART3->getRxBuffer()[i];
-//			App::mApp->mUART3->setBufferCount(App::mApp->mUART3->getBufferCount() + 1);
-//			if(App::mApp->mUART3->getBufferCount() == 2047){
-//				App::mApp->mUART3->setBufferCount(0);
+//void DMA1_Stream3_IRQHandler(void)
+//{
+//	if(DMA_GetITStatus(DMA1_Stream3, DMA_IT_TCIF3) == SET)
+//	{
+//		DMA_ClearITPendingBit (DMA1_Stream3, DMA_IT_TCIF3);
+//		DMA_Cmd(DMA1_Stream3, DISABLE);
+//		App::mApp->mTicks->setTimeout(3);
+//		while (USART_GetFlagStatus(USART3,USART_FLAG_TC)==RESET){
+//			if(App::mApp->mTicks->Timeout()){
+//				break;
 //			}
-			App::mApp->mUART3->Buffer[App::mApp->mUART3->BufferCount++] = App::mApp->mUART3->rxBuffer[i];
-			App::mApp->mUART3->AvailableLength++;
-			if(App::mApp->mUART3->BufferCount >= 2047){
-				App::mApp->mUART3->BufferCount = 0;
-			}
-		}
+//		}
+//		USART_ClearFlag(USART3,USART_FLAG_TC);
+//		App::mApp->mUART3->isDmaBusy = false;//setIsDmaBusy(false);
+//	}
+//}
 
-		DMA_Cmd(DMA1_Stream1, ENABLE);
-	}
-}
+//void DMA1_Stream1_IRQHandler(void)
+//{
+//	if(DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1) == SET)
+//	{
+//		DMA_ClearITPendingBit (DMA1_Stream1, DMA_IT_TCIF1);
+//		DMA_Cmd(DMA1_Stream1, DISABLE);
+//		App::mApp->mTicks->setTimeout(3);
+//		while(USART_GetFlagStatus(USART3, USART_FLAG_RXNE) == SET){
+//			if(App::mApp->mTicks->Timeout()){
+//				break;
+//			}
+//		}
+//		for(int i = 0; i < 5; i++){
+////			App::mApp->mUART3->getBuffer()[App::mApp->mUART3->getBufferCount()] = App::mApp->mUART3->getRxBuffer()[i];
+////			App::mApp->mUART3->setBufferCount(App::mApp->mUART3->getBufferCount() + 1);
+////			if(App::mApp->mUART3->getBufferCount() == 2047){
+////				App::mApp->mUART3->setBufferCount(0);
+////			}
+//			App::mApp->mUART3->Buffer[App::mApp->mUART3->BufferCount++] = App::mApp->mUART3->rxBuffer[i];
+//			App::mApp->mUART3->AvailableLength++;
+//			if(App::mApp->mUART3->BufferCount >= 2047){
+//				App::mApp->mUART3->BufferCount = 0;
+//			}
+//		}
+//
+//		DMA_Cmd(DMA1_Stream1, ENABLE);
+//	}
+//}
 
 void DMA2_Stream2_IRQHandler(void)
 {
@@ -240,71 +240,75 @@ UART::UART(UARTConfiguration* conf) : UARTConf(conf->_UARTx), Conf(conf), Buffer
 
 		NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
 
-		RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
 		DMA_DeInit(DMA2_Stream7);
+		if(conf->_UseDMA){
+			RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
 
-		DMA_InitStructure.DMA_BufferSize = 32;
-		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
-		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
-		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
-		DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-		DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-		DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-		DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(USART1->DR)) ;
-		DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-		DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+			DMA_InitStructure.DMA_BufferSize = 32;
+			DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+			DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+			DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+			DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+			DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+			DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+			DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(USART1->DR)) ;
+			DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+			DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+			DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+			DMA_InitStructure.DMA_Priority = DMA_Priority_High;
 
-		DMA_InitStructure.DMA_Channel = DMA_Channel_4 ;
-		DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral ;
-		DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(txBuffer) ;
-		DMA_Init(DMA2_Stream7, &DMA_InitStructure);
+			DMA_InitStructure.DMA_Channel = DMA_Channel_4 ;
+			DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral ;
+			DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(txBuffer) ;
+			DMA_Init(DMA2_Stream7, &DMA_InitStructure);
 
-		NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream7_IRQn;
-		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-		NVIC_Init (&NVIC_InitStructure);
+			NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream7_IRQn;
+			NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+			NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+			NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+			NVIC_Init (&NVIC_InitStructure);
 
-		USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
-		DMA_ITConfig (DMA2_Stream7, DMA_IT_TC, ENABLE);
-
+			USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
+			DMA_ITConfig (DMA2_Stream7, DMA_IT_TC, ENABLE);
+		}
 
 		DMA_DeInit(DMA2_Stream2);
 
-		DMA_InitStructure.DMA_BufferSize = 5;
-		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
-		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
-		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
-		DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-		DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-		DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-		DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(USART1->DR)) ;
-		DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-		DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+		if(conf->_UseDMA){
+			DMA_InitStructure.DMA_BufferSize = 5;
+			DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+			DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+			DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+			DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+			DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+			DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+			DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(USART1->DR)) ;
+			DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+			DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+			DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+			DMA_InitStructure.DMA_Priority = DMA_Priority_High;
 
-		DMA_InitStructure.DMA_Channel = DMA_Channel_4 ;
-		DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory ;
-		DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(rxBuffer) ;
-		DMA_Init(DMA2_Stream2, &DMA_InitStructure);
+			DMA_InitStructure.DMA_Channel = DMA_Channel_4 ;
+			DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory ;
+			DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(rxBuffer) ;
+			DMA_Init(DMA2_Stream2, &DMA_InitStructure);
 
-		NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream2_IRQn;
-		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-		NVIC_Init (&NVIC_InitStructure);
-
+			NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream2_IRQn;
+			NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+			NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+			NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+			NVIC_Init (&NVIC_InitStructure);
+		}
 		if(!conf->_UseDMA){
 			USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 			NVIC_Init(&NVIC_InitStructure);
 		}
 
-		USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
-		DMA_ITConfig (DMA2_Stream2, DMA_IT_TC, ENABLE);
-		DMA_Cmd(DMA2_Stream2, ENABLE);
+		if(conf->_UseDMA){
+			USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
+			DMA_ITConfig (DMA2_Stream2, DMA_IT_TC, ENABLE);
+			DMA_Cmd(DMA2_Stream2, ENABLE);
+		}
 	}
 	else if(conf->_UARTx == UART::UARTConfiguration::UARTConf3){
 
@@ -327,71 +331,71 @@ UART::UART(UARTConfiguration* conf) : UARTConf(conf->_UARTx), Conf(conf), Buffer
 
 		USART_Cmd(USART3, ENABLE);
 
-		RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_DMA1, ENABLE);
-		DMA_DeInit(DMA1_Stream3);
-
-		DMA_InitStructure.DMA_BufferSize = 32;
-		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
-		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
-		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
-		DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-		DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-		DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-		DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(USART3->DR)) ;
-		DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-		DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-
-		DMA_InitStructure.DMA_Channel = DMA_Channel_4 ;
-		DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral ;
-		DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(txBuffer) ;
-		DMA_Init(DMA1_Stream3, &DMA_InitStructure);
-
-		NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream3_IRQn;
-		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-		NVIC_Init (&NVIC_InitStructure);
-
-		USART_DMACmd(USART3, USART_DMAReq_Tx, ENABLE);
-		DMA_ITConfig(DMA1_Stream3, DMA_IT_TC, ENABLE);
-
-
-		DMA_DeInit(DMA1_Stream1);
-
-		DMA_InitStructure.DMA_BufferSize = 5;
-		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
-		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
-		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
-		DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-		DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-		DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-		DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(USART3->DR)) ;
-		DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-		DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-
-		DMA_InitStructure.DMA_Channel = DMA_Channel_4 ;
-		DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory ;
-		DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(rxBuffer) ;
-		DMA_Init(DMA1_Stream1, &DMA_InitStructure);
-
-		NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream1_IRQn;
-		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-		NVIC_Init (&NVIC_InitStructure);
-
-		if(!conf->_UseDMA){
+//		RCC_AHB1PeriphClockCmd (RCC_AHB1Periph_DMA1, ENABLE);
+//		DMA_DeInit(DMA1_Stream3);
+//
+//		DMA_InitStructure.DMA_BufferSize = 32;
+//		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+//		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+//		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+//		DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+//		DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+//		DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+//		DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(USART3->DR)) ;
+//		DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+//		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+//		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+//		DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+//
+//		DMA_InitStructure.DMA_Channel = DMA_Channel_4 ;
+//		DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral ;
+//		DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(txBuffer) ;
+//		DMA_Init(DMA1_Stream3, &DMA_InitStructure);
+//
+//		NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream3_IRQn;
+//		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+//		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+//		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//		NVIC_Init (&NVIC_InitStructure);
+//
+//		USART_DMACmd(USART3, USART_DMAReq_Tx, ENABLE);
+//		DMA_ITConfig(DMA1_Stream3, DMA_IT_TC, ENABLE);
+//
+//
+//		DMA_DeInit(DMA1_Stream1);
+//
+//		DMA_InitStructure.DMA_BufferSize = 5;
+//		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+//		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+//		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+//		DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+//		DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+//		DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+//		DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(USART3->DR)) ;
+//		DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+//		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+//		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+//		DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+//
+//		DMA_InitStructure.DMA_Channel = DMA_Channel_4 ;
+//		DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory ;
+//		DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(rxBuffer) ;
+//		DMA_Init(DMA1_Stream1, &DMA_InitStructure);
+//
+//		NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream1_IRQn;
+//		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+//		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+//		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//		NVIC_Init (&NVIC_InitStructure);
+//
+//		if(!conf->_UseDMA){
 			USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
 			NVIC_Init(&NVIC_InitStructure);
-		}
-
-		USART_DMACmd(USART3, USART_DMAReq_Rx, ENABLE);
-		DMA_ITConfig (DMA1_Stream1, DMA_IT_TC, ENABLE);
-		DMA_Cmd(DMA1_Stream1, ENABLE);
+//		}
+//
+//		USART_DMACmd(USART3, USART_DMAReq_Rx, ENABLE);
+//		DMA_ITConfig (DMA1_Stream1, DMA_IT_TC, ENABLE);
+//		DMA_Cmd(DMA1_Stream1, ENABLE);
 
 	}
 	else if (conf->_UARTx == UART::UARTConfiguration::UARTConf4)
@@ -446,7 +450,7 @@ void UART::Print(const char* pstr, ...)
 	int length = 0;
 	va_list arglist;
 	char* fp;
-	for(int i = 0; i < 256; i++){
+	for(int i = 0; i < 512; i++){
 		txBuffer[i] = 0;
 	}
 	va_start(arglist, pstr);
@@ -456,21 +460,21 @@ void UART::Print(const char* pstr, ...)
 	while(*(fp++)){
 		length++;
 	}
-	if(getUARTx() == USART1){
+	if(getUARTx() == USART1 && Conf->_UseDMA){
 		if(!App::mApp->mUART1->isDmaBusy){
 			App::mApp->mUART1->isDmaBusy = true;
 			DMA_SetCurrDataCounter(DMA2_Stream7, length);
 			DMA_Cmd(DMA2_Stream7, ENABLE);
 		}
 	}
-	else if(getUARTx() == USART3){
+	else if(getUARTx() == USART3 && Conf->_UseDMA){
 		if(!App::mApp->mUART3->isDmaBusy){
 			App::mApp->mUART3->isDmaBusy = true;
 			DMA_SetCurrDataCounter(DMA1_Stream3, length);
 			DMA_Cmd(DMA1_Stream3, ENABLE);
 		}
 	}
-	else if(getUARTx() == UART4 || getUARTx() == UART5){
+	else if(!Conf->_UseDMA || (getUARTx() == UART4 || getUARTx() == UART5)){
 		fp = txBuffer;
 		for(int i = 0; i < length; i++){
 			App::mApp->mTicks->setTimeout(3);

@@ -17,26 +17,26 @@
 
 uint16_t Ticks::maxTicks = 60000;
 
-void SysTick_Handler(void){
-	App::mApp->mTicks->TicksIncrement();
-	if(App::mApp->mTicks->getTicks() >= Ticks::maxTicks){
-		App::mApp->mTicks->setTicks(0);
-	}
-
-	if(App::mApp->mTicks->getTicks() % 1000 == 0){
-		App::mTicks->Sec++;
-	}
-
-	if(App::mApp->mTask != 0 && App::mApp->mTask->IsPrintTaskNum){
-		if(App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->hangCount++ > App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->TaskPeriod){
-			static int delayCount = 0;
-			if(delayCount++ > 10){
-				delayCount = 0;
-				printf("%s:%d\r\n", App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->TaskName.c_str(), App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->duration[1] - App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->duration[0]);
-			}
-		}
-	}
-}
+//void SysTick_Handler(void){
+//	App::mApp->mTicks->TicksIncrement();
+//	if(App::mApp->mTicks->getTicks() >= Ticks::maxTicks){
+//		App::mApp->mTicks->setTicks(0);
+//	}
+//
+//	if(App::mApp->mTicks->getTicks() % 1000 == 0){
+//		App::mTicks->Sec++;
+//	}
+//
+//	if(App::mApp->mTask != 0 && App::mApp->mTask->IsPrintTaskNum){
+//		if(App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->hangCount++ > App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->TaskPeriod){
+//			static int delayCount = 0;
+//			if(delayCount++ > 10){
+//				delayCount = 0;
+//				printf("%s:%d\r\n", App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->TaskName.c_str(), App::mApp->mTask->mTaskObj[App::mApp->mTask->currentTaskNum]->hangCount);
+//			}
+//		}
+//	}
+//}
 
 uint16_t Ticks::getTimeout(){
 

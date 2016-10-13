@@ -41,24 +41,24 @@ void Omega::Update(){
 	if(isMPU6500){
 		if(_mMPU6500->getIsValided()){
 			_Omega = _mMPU6500->getRawOmega();
-			for(int i = 0; i < 3; i++){
-				mOmegaMovingWindowAverageFilter[i]->Update(_mMPU6500->getRawOmega()[i]);
-				//_FilteredOmega[i] = mOmegaMovingWindowAverageFilter[i]->getAverage();
-			}
-
-			Matrix3f A;
-			A.setIdentity();
-			Matrix3f H;
-			H.setIdentity();
-			if(OmegaKalman->Filtering(A, _FilteredOmega, H, _Omega)){
-				_FilteredOmega = OmegaKalman->getCorrectedData();
-				for(int i = 0; i < 3; i++){
-					_FilteredOmega[i] = MathTools::CutOff(_FilteredOmega[i], 0.0f, 2.0f);
-				}
-			}
-			else{
-				isValided = false;
-			}
+//			for(int i = 0; i < 3; i++){
+//				mOmegaMovingWindowAverageFilter[i]->Update(_mMPU6500->getRawOmega()[i]);
+//				//_FilteredOmega[i] = mOmegaMovingWindowAverageFilter[i]->getAverage();
+//			}
+//
+//			Matrix3f A;
+//			A.setIdentity();
+//			Matrix3f H;
+//			H.setIdentity();
+//			if(OmegaKalman->Filtering(A, _FilteredOmega, H, _Omega)){
+//				_FilteredOmega = OmegaKalman->getCorrectedData();
+//				for(int i = 0; i < 3; i++){
+//					_FilteredOmega[i] = MathTools::CutOff(_FilteredOmega[i], 0.0f, 1.0f);
+//				}
+//			}
+//			else{
+//				isValided = false;
+//			}
 			isValided = true;
 		}
 		else{

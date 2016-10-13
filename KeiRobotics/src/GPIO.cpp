@@ -20,7 +20,7 @@
 using namespace System;
 using namespace std;
 
-GPIO::GPIOConfiguration::GPIOConfiguration(Configuration* gpio, BitAction onState) : _gpio(gpio), _onState(onState), _offState(onState ? Bit_RESET : Bit_SET){
+GPIO::GPIOConfiguration::GPIOConfiguration(Configuration* gpio, bool isOutput, BitAction onState) : _isOutput(isOutput), _gpio(gpio), _onState(onState), _offState(onState ? Bit_RESET : Bit_SET){
 };
 
 BlinkObj::BlinkObj(GPIO* pGPIO){
@@ -30,17 +30,37 @@ BlinkObj::BlinkObj(GPIO* pGPIO){
 	addrStr[5] = '\n';
 }
 
-GPIO::GPIO(GPIOConfiguration* conf) : Conf(conf){
+GPIO::GPIO(GPIOConfiguration* conf) : Conf(conf), IsOutput(conf->_isOutput){
 	GPIO_InitTypeDef  GPIO_InitStructure;
     RCC_AHB1PeriphClockCmd(conf->_gpio->_rcc, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = conf->_gpio->_pin;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	if(IsOutput){
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+		GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	}
+	else{
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+		if(conf->_onState){
+			GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+		}
+		else{
+			GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+		}
+	}
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(conf->_gpio->_port, &GPIO_InitStructure);
 
 	GPIOControl(false);
+}
+
+bool GPIO::GPIORead(){
+	if(IsOutput){
+		return GPIO_ReadOutputDataBit(Conf->_gpio->_port, Conf->_gpio->_pin) ? true : false;
+	}
+	else{
+		return GPIO_ReadInputDataBit(Conf->_gpio->_port, Conf->_gpio->_pin) ? true : false;
+	}
 }
 
 void GPIO::GPIOControl(bool onState){

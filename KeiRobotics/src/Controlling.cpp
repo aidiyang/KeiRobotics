@@ -74,7 +74,7 @@ void StoppingTask(Bundle* bundle){
 	}
 }
 
-Controlling::Controlling(PWM* mPWM) : _mPWM(mPWM), WatchDogLimit(800), landingLift(5000), minLift(7000), maxLift(10000),
+Controlling::Controlling(PWM* mPWM) : _mPWM(mPWM), WatchDogLimit(800), landingLift(5000), minLift(4000), maxLift(10000),
 		Motor1PWM(0), Motor2PWM(0), Motor3PWM(0), Motor4PWM(0),
 		started(false), starting(false), stopping(false),
 		watchDogCount(0), Lift(0.0f), RollTarget(0),
@@ -84,11 +84,11 @@ Controlling::Controlling(PWM* mPWM) : _mPWM(mPWM), WatchDogLimit(800), landingLi
 		XPosTarget(0), YPosTarget(0), YawTarget(0), ManualMode(false), IsSonicDriveYaw(false){
 
 	RollPid = new Pid(0.0f,0.0f,0.0,10000.0f);
-	PitchPid = new Pid(0.0f,0.0f,0.0,10000.0f);
+	PitchPid = new Pid(10000.0f,0.0f,0.0,10000.0f);
 	YawPid = new Pid(0.0f,0.0f,0.0,10000.0f);
 
 	KdRollPid = new Pid(0.0f,0.0f,0.0,10000.0f);
-	KdPitchPid = new Pid(0.0f,0.0f,0.0,10000.0f);
+	KdPitchPid = new Pid(50.0f,0.0f,0.0,10000.0f);
 	KdYawPid = new Pid(0.0f,0.0f,0.0,10000.0f);
 
 //	Motor1 = new Pid(8000.0f,0.0f,0.0,10000.0f);
@@ -115,39 +115,62 @@ void Controlling::ControllingPoll(){
 
 	if(started){
 
-
 		if(watchDogCount < WatchDogLimit){
-//			watchDogCount++;
+			//watchDogCount++;
 		}
+		float errRoll = 0;
+		float errPitch = 0;
+		float errYaw = 0;
+		float cosRollcosPitch = 0;
+		bool failed = false;
+		Vector3f euler = App::mApp->mQuaternion->getEuler();
+		Vector3f omega = App::mApp->mOmega->getOmega();
+		if(euler[0] == euler[0] &&
+			euler[1] == euler[1] &&
+			euler[2] == euler[2] &&
+			omega[0] == omega[0] &&
+			omega[1] == omega[1] &&
+			omega[2] == omega[2]){
+			errRoll = RollPid->pid(MathTools::DegreeToRadian(RollTarget), App::mApp->mQuaternion->getEuler()[0] - MathTools::DegreeToRadian(RollOffset)) + KdRollPid->pid(0, App::mApp->mOmega->getOmega()[0]);
+			errPitch = PitchPid->pid(MathTools::DegreeToRadian(PitchTarget), App::mApp->mQuaternion->getEuler()[1] - MathTools::DegreeToRadian(PitchOffset)) + KdPitchPid->pid(0, App::mApp->mOmega->getOmega()[1]);
+			errYaw = YawPid->pid(MathTools::DegreeToRadian(YawTarget), App::mApp->mQuaternion->getEuler()[2] - MathTools::DegreeToRadian(YawOffset)) + KdYawPid->pid(0, App::mApp->mOmega->getOmega()[2]);
 
-		float errRoll = RollPid->pid(MathTools::DegreeToRadian(RollTarget), App::mApp->mQuaternion[0]->getEuler()[0] - MathTools::DegreeToRadian(RollOffset)) + KdRollPid->pid(0, App::mApp->mOmega[0]->getOmega()[0]);
-		float errPitch = PitchPid->pid(MathTools::DegreeToRadian(PitchTarget), App::mApp->mQuaternion[0]->getEuler()[1] - MathTools::DegreeToRadian(PitchOffset)) + KdPitchPid->pid(0, App::mApp->mOmega[0]->getOmega()[1]);
-		float errYaw = YawPid->pid(MathTools::DegreeToRadian(YawTarget), App::mApp->mQuaternion[0]->getEuler()[2] - MathTools::DegreeToRadian(YawOffset)) + KdYawPid->pid(0, App::mApp->mOmega[0]->getOmega()[2]);
-
-		float cosRollcosPitch = cosf(App::mApp->mQuaternion[0]->getEuler()[0] - MathTools::DegreeToRadian(RollOffset)) * cosf(App::mApp->mQuaternion[0]->getEuler()[1] - MathTools::DegreeToRadian(PitchOffset));
-
-		Motor1PWM = Lift / cosRollcosPitch + errRoll - errPitch + errYaw;
-		Motor2PWM = Lift / cosRollcosPitch - errRoll - errPitch - errYaw;
-		Motor3PWM = Lift / cosRollcosPitch - errRoll + errPitch + errYaw;
-		Motor4PWM = Lift / cosRollcosPitch + errRoll + errPitch - errYaw;
-		if(stopping){
-			Motor1PWM = MathTools::Trim(landingLift, Motor1PWM, maxLift);
-			Motor2PWM = MathTools::Trim(landingLift, Motor2PWM, maxLift);
-			Motor3PWM = MathTools::Trim(landingLift, Motor3PWM, maxLift);
-			Motor4PWM = MathTools::Trim(landingLift, Motor4PWM, maxLift);
+			cosRollcosPitch = cosf(App::mApp->mQuaternion->getEuler()[0] - MathTools::DegreeToRadian(RollOffset)) * cosf(App::mApp->mQuaternion->getEuler()[1] - MathTools::DegreeToRadian(PitchOffset));
+		}else{
+			failed = true;
 		}
-		else{
-			Motor1PWM = MathTools::Trim(minLift, Motor1PWM, maxLift);
-			Motor2PWM = MathTools::Trim(minLift, Motor2PWM, maxLift);
-			Motor3PWM = MathTools::Trim(minLift, Motor3PWM, maxLift);
-			Motor4PWM = MathTools::Trim(minLift, Motor4PWM, maxLift);
+		if(!failed && errRoll == errRoll &&
+			errPitch == errPitch &&
+			errYaw == errYaw &&
+			cosRollcosPitch == cosRollcosPitch){
+			Motor1PWM = Lift / cosRollcosPitch + errRoll - errPitch + errYaw;
+			Motor2PWM = Lift / cosRollcosPitch - errRoll - errPitch - errYaw;
+			Motor3PWM = Lift / cosRollcosPitch - errRoll + errPitch + errYaw;
+			Motor4PWM = Lift / cosRollcosPitch + errRoll + errPitch - errYaw;
+			if(stopping){
+				Motor1PWM = MathTools::Trim(landingLift, Motor1PWM, maxLift);
+				Motor2PWM = MathTools::Trim(landingLift, Motor2PWM, maxLift);
+				Motor3PWM = MathTools::Trim(landingLift, Motor3PWM, maxLift);
+				Motor4PWM = MathTools::Trim(landingLift, Motor4PWM, maxLift);
+			}
+			else{
+				Motor1PWM = MathTools::Trim(minLift, Motor1PWM, maxLift);
+				Motor2PWM = MathTools::Trim(minLift, Motor2PWM, maxLift);
+				Motor3PWM = MathTools::Trim(minLift, Motor3PWM, maxLift);
+				Motor4PWM = MathTools::Trim(minLift, Motor4PWM, maxLift);
+			}
+			_mPWM->Control1(Motor1PWM);
+			_mPWM->Control2(Motor2PWM);
+			_mPWM->Control3(Motor3PWM);
+			_mPWM->Control4(Motor4PWM);
+		}else{
+			failed = true;
 		}
-		_mPWM->Control1(Motor1PWM);
-		_mPWM->Control2(Motor2PWM);
-		_mPWM->Control3(Motor3PWM);
-		_mPWM->Control4(Motor4PWM);
+		if(failed){
+			return;
+		}
 	}
-	if(watchDogCount >= WatchDogLimit){// ||
+	if(watchDogCount >= WatchDogLimit){ //||
 //	   fabsf(RollTarget + RollOffset - MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0])) > 25.0f ||
 //	   fabsf(PitchTarget + PitchOffset - MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1])) > 25.0f){
 		if(started){

@@ -19,7 +19,8 @@ Com::Com(Interface interface, uint32_t addr, int index) : _interface(interface),
 		case __SPI:
 			_Spi = (Spi*)addr;
 			break;
-		case __I2C:
+		case __RF:
+			_nRF24L01 = (nRF24L01*)addr;
 			break;
 	}
 }
@@ -41,7 +42,9 @@ void Communicating::ReceivePoll(){
 			Length = _com->_Spi->AvailableLength;
 			_com->_Spi->Read(Buffer + BufferCount, Length);
 			break;
-		case Com::__I2C:
+		case Com::__RF:
+			Length = _com->_nRF24L01->AvailableLength;
+			_com->_nRF24L01->Read(Buffer + BufferCount, Length);
 			break;
 	}
 	BufferCount += Length;
@@ -82,16 +85,6 @@ void Communicating::ReceivePoll(){
 	}
 }
 
-void _ResetTask(Bundle* bundle){
-	for(int i = 0; i < 6; i++){
-		App::mApp->InitEuler[i] = App::mApp->mQuaternion[i]->getEuler();
-		App::mApp->mQuaternion[i]->mean[0] = 0;
-		App::mApp->mQuaternion[i]->mean[1] = 0;
-		App::mApp->mQuaternion[i]->mean[2] = 0;
-	}
-	printf("RESETED\r\n");
-}
-
 void Communicating::SendPoll(){
 	char D[txBufferCount + 1];
 	for(int i = 0; i < txBufferCount; i++){
@@ -109,26 +102,138 @@ void Communicating::SendPoll(){
 				_com->_Spi->Print(_com->Index, "%s\n", D);
 			}
 			break;
-		case Com::__I2C:
+		case Com::__RF:
+			if(txBufferCount >= 5){
+				_com->_nRF24L01->Print("%s\n", D);
+			}
 			break;
 	}
 	txBufferCount = 0;
 }
 
 void Communicating::Execute(int cmd, float data){
-//	if(App::mApp->mCommunicating3 == this){
-//		printf("CMD:%d  DATA:%g\r\n", cmd, data);
-//	}
-	switch(cmd){
+	if(this == App::mApp->mCommunicating1){
+		for(int i = 0; i < 4; i++){
+			App::mApp->mnRF24L01->TxChannel = App::mApp->Channel[i+1];
+			App::mApp->mCommunicating2->Send(cmd, data);
+			Delay::DelayMS(5);
+		}
+		Acknowledgement();
+	}
+	else if(this == App::mApp->mCommunicating2){
+		if(App::mApp->DeviceIndex == 0){
+			App::mApp->mCommunicating1->Send(cmd, data);
+		}
+		switch(cmd){
+			case CMD::PRINT_MODE:
+				if(App::mApp->DeviceIndex != 0){
+					PrintType = data;
+					Acknowledgement();
+				}
+				break;
+			case CMD::RESET_ALL:
+				if(App::mApp->DeviceIndex != 0){
+					if(App::mApp->mCompass != 0){
+						App::mApp->mCompass->Reset();
+					}
+					App::mApp->mQuaternion->Reset();
+					Acknowledgement();
+					printf("RESETED\r\n");
+				}
+				break;
+			case CMD::DEV1FB:
+				if(App::mApp->DeviceIndex == 1){
+					static int index = 0;
+					if(index == 0){
+						App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0])));
+					}
+					else if(index == 1){
+						App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1])));
+					}
+					else if(index == 2){
+						App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2])));
+					}
+					if(index == 2){
+						index = 0;
+					}
+					else{
+						index++;
+					}
+					Acknowledgement();
+				}
+				break;
+			case CMD::DEV2FB:
+				if(App::mApp->DeviceIndex == 2){
+					static int index = 0;
+					if(index == 0){
+						App::mApp->mCommunicating2->Send(index+3, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0])));
+					}
+					else if(index == 1){
+						App::mApp->mCommunicating2->Send(index+3, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1])));
+					}
+					else if(index == 2){
+						App::mApp->mCommunicating2->Send(index+3, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2])));
+					}
+					if(index == 2){
+						index = 0;
+					}
+					else{
+						index++;
+					}
+					Acknowledgement();
+				}
+				break;
+			case CMD::DEV3FB:
+				if(App::mApp->DeviceIndex == 3){
+					static int index = 0;
+					if(index == 0){
+						App::mApp->mCommunicating2->Send(index+6, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0])));
+					}
+					else if(index == 1){
+						App::mApp->mCommunicating2->Send(index+6, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1])));
+					}
+					else if(index == 2){
+						App::mApp->mCommunicating2->Send(index+6, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2])));
+					}
+					if(index == 2){
+						index = 0;
+					}
+					else{
+						index++;
+					}
+					Acknowledgement();
+				}
+				break;
+			case CMD::DEV4FB:
+				if(App::mApp->DeviceIndex == 4){
+					static int index = 0;
+					if(index == 0){
+						App::mApp->mCommunicating2->Send(index+9, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0])));
+					}
+					else if(index == 1){
+						App::mApp->mCommunicating2->Send(index+9, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1])));
+					}
+					else if(index == 2){
+						App::mApp->mCommunicating2->Send(index+9, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2])));
+					}
+					if(index == 2){
+						index = 0;
+					}
+					else{
+						index++;
+					}
+					Acknowledgement();
+				}
+				break;
+
+		}
+	}
+
+/*
+	switch(255){
 
 		case CMD::WATCHDOG:
-//			App::mCommunicating1->readyToSend = true;
-//			App::mCommunicating1->PeriodicCmd = cmd;
-//			App::mCommunicating1->PeriodicData = data;
-//			App::mApp->mControlling->clearWatchDogCount();
-			App::mApp->mCommunicating1->Send(cmd, data);
-//			printf("CMD:%d,DATA:%g\r\n", cmd, data);
-//			Acknowledgement();
+			App::mApp->mControlling->clearWatchDogCount();
 			break;
 		case CMD::PRINT_MODE:
 			PrintType = data;
@@ -148,88 +253,99 @@ void Communicating::Execute(int cmd, float data){
 			break;
 		case CMD::START:
 			App::mApp->mControlling->Starting();
-			App::mApp->PeriodicCmd2 = Communicating::SUCCESS;
-			App::mApp->PeriodicData2 = Communicating::START;
 			Acknowledgement();
 			break;
 		case CMD::ROLL_KP:
-			App::mApp->Motor1PID->setKp(data);
-//			App::mApp->mControlling->RollPid->setKp(data);
+//			App::mApp->Motor1PID->setKp(data);
+			App::mApp->mControlling->RollPid->setKp(data);
+			printf("Roll: Kp:%g, Ki:%g, Kd:%g\r\n", App::mApp->mControlling->RollPid->getKp(),
+													App::mApp->mControlling->RollPid->getKi(),
+													App::mApp->mControlling->KdRollPid->getKp());
 			Acknowledgement();
 			break;
 		case CMD::ROLL_KI:
-			App::mApp->Motor1PID->setKi(data);
-//			App::mApp->mControlling->RollPid->setKi(data);
+//			App::mApp->Motor1PID->setKi(data);
+			App::mApp->mControlling->RollPid->setKi(data);
+			printf("Roll: Kp:%g, Ki:%g, Kd:%g\r\n", App::mApp->mControlling->RollPid->getKp(),
+													App::mApp->mControlling->RollPid->getKi(),
+													App::mApp->mControlling->KdRollPid->getKp());
 			Acknowledgement();
 			break;
 		case CMD::ROLL_KD:
-			App::mApp->Motor1PID->setKd(data);
-//			App::mApp->mControlling->KdRollPid->setKd(data);
+//			App::mApp->Motor1PID->setKd(data);
+			App::mApp->mControlling->KdRollPid->setKp(data);
+			printf("Roll: Kp:%g, Ki:%g, Kd:%g\r\n", App::mApp->mControlling->RollPid->getKp(),
+													App::mApp->mControlling->RollPid->getKi(),
+													App::mApp->mControlling->KdRollPid->getKp());
 			Acknowledgement();
 			break;
 		case CMD::PITCH_KP:
 			App::mApp->mControlling->PitchPid->setKp(data);
+			printf("Pitch: Kp:%g, Ki:%g, Kd:%g\r\n", App::mApp->mControlling->PitchPid->getKp(),
+													App::mApp->mControlling->PitchPid->getKi(),
+													App::mApp->mControlling->KdPitchPid->getKp());
 			Acknowledgement();
 			break;
 		case CMD::PITCH_KI:
 			App::mApp->mControlling->PitchPid->setKi(data);
+			printf("Pitch: Kp:%g, Ki:%g, Kd:%g\r\n", App::mApp->mControlling->PitchPid->getKp(),
+													App::mApp->mControlling->PitchPid->getKi(),
+													App::mApp->mControlling->KdPitchPid->getKp());
 			Acknowledgement();
 			break;
 		case CMD::PITCH_KD:
-			App::mApp->mControlling->KdPitchPid->setKd(data);
+			App::mApp->mControlling->KdPitchPid->setKp(data);
+			printf("Pitch: Kp:%g, Ki:%g, Kd:%g\r\n", App::mApp->mControlling->PitchPid->getKp(),
+													App::mApp->mControlling->PitchPid->getKi(),
+													App::mApp->mControlling->KdPitchPid->getKp());
 			Acknowledgement();
 			break;
 		case CMD::YAW_KP:
 			App::mApp->mControlling->YawPid->setKp(data);
+			printf("Yaw: Kp:%g, Ki:%g, Kd:%g\r\n", App::mApp->mControlling->YawPid->getKp(),
+													App::mApp->mControlling->YawPid->getKi(),
+													App::mApp->mControlling->KdYawPid->getKp());
 			Acknowledgement();
 			break;
 		case CMD::YAW_KI:
 			App::mApp->mControlling->YawPid->setKi(data);
+			printf("Yaw: Kp:%g, Ki:%g, Kd:%g\r\n", App::mApp->mControlling->YawPid->getKp(),
+													App::mApp->mControlling->YawPid->getKi(),
+													App::mApp->mControlling->KdYawPid->getKp());
 			Acknowledgement();
 			break;
 		case CMD::YAW_KD:
-			App::mApp->mControlling->KdYawPid->setKd(data);
+//			App::mApp->mControlling->KdYawPid->setKd(data);
+			App::mApp->mControlling->KdYawPid->setKp(data);
+			printf("Yaw: Kp:%g, Ki:%g, Kd:%g\r\n", App::mApp->mControlling->YawPid->getKp(),
+													App::mApp->mControlling->YawPid->getKi(),
+													App::mApp->mControlling->KdYawPid->getKp());
 			Acknowledgement();
 			break;
 		case CMD::RESET_ALL:
-//			App::mApp->mControlling->setStart(false);
-//			App::mApp->mControlling->setStarting(false);
-//			App::mApp->mControlling->setStopping(false);
-//			App::mApp->mControlling->StopAllMotors();
+			App::mApp->mControlling->setStart(false);
+			App::mApp->mControlling->setStarting(false);
+			App::mApp->mControlling->setStopping(false);
+			App::mApp->mControlling->StopAllMotors();
 			if(App::mApp->mCompass != 0){
 				App::mApp->mCompass->Reset();
 			}
-			for(int i = 0; i < 6; i++){
-				App::mApp->mQuaternion[i]->Reset();
-			}
-//			App::mApp->mTask->Attach(5000, _ResetTask, "_ResetTask", false, 1);
-
-//			for(int i = 0; i < 500; i++){
-//				App::mApp->mMPU6050->Update();
-//				App::mApp->mHMC5883L->Update();
-//				App::mApp->mAcceleration->Update();
-//				App::mApp->mOmega->Update();
-//				App::mApp->mCompass->Update();
-//				App::mApp->mQuaternion->Update();
-		//		Delay::DelayMS(2);
-	//		}
-
-//			App::mApp->mControlling->RollOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0]);
-//			App::mApp->mControlling->PitchOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1]);
-//			App::mApp->mControlling->YawOffset = MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2]);
-//			App::mApp->mControlling->Lift = 0;
-//			Acknowledgement();
+			App::mApp->mQuaternion->Reset();
+			Acknowledgement();
 			break;
 		case CMD::ROLL_OFFSET:
 			App::mApp->mControlling->setRollOffset(App::mApp->mControlling->getRollOffset() + data);
+			printf("Rolloffset:%g\r\n", App::mApp->mControlling->getRollOffset());
 			Acknowledgement();
 			break;
 		case CMD::PITCH_OFFSET:
 			App::mApp->mControlling->setPitchOffset(App::mApp->mControlling->getPitchOffset() + data);
+			printf("Pitchoffset:%g\r\n", App::mApp->mControlling->getPitchOffset());
 			Acknowledgement();
 			break;
 		case CMD::YAW_OFFSET:
 			App::mApp->mControlling->setYawOffset(App::mApp->mControlling->getYawOffset() + data);
+			printf("Yawoffset:%g\r\n", App::mApp->mControlling->getYawOffset());
 			Acknowledgement();
 			break;
 		case CMD::HIGH:
@@ -660,15 +776,11 @@ void Communicating::Execute(int cmd, float data){
 //	if(App::mApp->mCommunicating2 == this){
 //		App::mApp->mUART4->Print("CMD:%d  DATA:%g\r\n", cmd, data);
 //		Acknowledgement();
-//	}
+//	}*/
 }
 
 void Communicating::Acknowledgement(){
-//	printf("OK\r\n");
-//	App::mApp->mLed1->Blink(App::mApp->mLed1, true, 100, 2);
-//	App::mApp->mLed2->Blink(App::mApp->mLed2, true, 100, 2);
-//	App::mApp->mLed3->Blink(App::mApp->mLed3, true, 100, 2);
-//	App::mApp->mLed4->Blink(App::mApp->mLed4, true, 100, 2);
+	App::mApp->mLed2->Toggle();
 }
 
 void Communicating::Send(int cmd, float data){

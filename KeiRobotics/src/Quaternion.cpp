@@ -70,7 +70,8 @@ Quaternion::Quaternion(Acceleration* mAcceleration, Omega* mOmega, EncoderYaw* m
 
 bool Quaternion::Update(){
 	if(_mOmega->getIsValided()){
-		Vector3f omega = _mOmega->getFilteredOmega() * MathTools::RADIAN_PER_DEGREE;
+//		Vector3f omega = _mOmega->getFilteredOmega() * MathTools::RADIAN_PER_DEGREE;
+		Vector3f omega = _mOmega->getOmega() * MathTools::RADIAN_PER_DEGREE;
 		Vector4f q;
 		q << 0, omega[0], omega[1], omega[2];
 		Vector4f t;

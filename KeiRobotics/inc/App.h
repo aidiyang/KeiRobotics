@@ -41,6 +41,7 @@
 #include <Eigen/Eigen>
 #include <CAN.h>
 #include <InputCapture.h>
+#include <nRF24L01.h>
 
 using namespace Time;
 using namespace Math;
@@ -68,6 +69,8 @@ namespace Sensors{
 	class MPU6050;
 	class HMC5883L;
 	class Encoder;
+	class ADConverter;
+	class MPU6050Configuration;
 };
 
 namespace Inertia{
@@ -112,6 +115,8 @@ namespace System{
 			static void SendTask(Bundle* bundle);
 			static void Print(Bundle* bundle);
 			static void TaskDurationPrint(Bundle* bundle);
+			static int DeviceIndex;
+			uint8_t* Channel;
 			static App* mApp;
 			static Ticks* mTicks;
 			static Task* mTask;
@@ -121,7 +126,7 @@ namespace System{
 			GPIO* mLed2;
 			GPIO* mLed3;
 			GPIO* mLed4;
-
+			MPU6050Configuration* mMPU6050Config;
 			GPIO* mSonicTrigger[16];
 
 			GPIO* mGPIO1;
@@ -132,9 +137,9 @@ namespace System{
 			GPIO* mGPIO6;
 			GPIO* mGPIO7;
 			GPIO* mGPIO8;
-			UART* mUART1;
-			UART* mUART2;
-			UART* mUART3;
+			static UART* mUART1;
+			static UART* mUART2;
+			static UART* mUART3;
 			static UART* mUART4;
 			static CAN* mCAN1;
 			UART* mUART5;
@@ -144,6 +149,8 @@ namespace System{
 			static Communicating* mCommunicating1;
 			static Communicating* mCommunicating2;
 			static Communicating* mCommunicating3;
+			nRF24L01Configuration* nRF24L01Conf;
+			static nRF24L01* mnRF24L01;
 			Communicating* mCommunicating4;
 			PWM* mPWM;
 			InputCapture* mInputCapture;
@@ -168,12 +175,15 @@ namespace System{
 			static Spi* mSpi2;
 			I2C* mI2C1;
 			I2C* mI2C2;
+			GPIO* mCE;
+			GPIO* mIRQ;
 			MPU6500* mMPU6500[6];
+			MPU6050* mMPU6050;
 			HMC5883L* mHMC5883L;
-			Acceleration* mAcceleration[6];
-			Omega* mOmega[6];
+			Acceleration* mAcceleration;
+			Omega* mOmega;
 			Compass* mCompass;
-			Quaternion* mQuaternion[6];
+			Quaternion* mQuaternion;
 			Controlling* mControlling;
 			MovingWindowAverageFilter* mADCFilter;
 			Encoder* mEncoder1;
@@ -299,6 +309,7 @@ namespace System{
 			} mEVDriverControlsSwitchPosition;
 
 		private:
+			void AppInit();
 	};
 };
 

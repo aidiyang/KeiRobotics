@@ -22,6 +22,43 @@
 using namespace Communication;
 using namespace Utility;
 
+//void DMA1_Stream3_IRQHandler(){
+//	if(DMA_GetITStatus(DMA1_Stream3, DMA_IT_TCIF3) == SET)
+//	{
+//		DMA_ClearITPendingBit (DMA1_Stream3, DMA_IT_TCIF3);
+//		DMA_Cmd(DMA1_Stream3, DISABLE);
+//		App::mApp->mTicks->setTimeout(3);
+//		while(SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET){
+//			if(App::mApp->mTicks->Timeout()){
+//				return;
+//			}
+//		}
+//		for(int i = 0; i < 5; i++){
+//			App::mApp->mSpi2->Buffer[App::mApp->mSpi2->BufferCount++] = App::mApp->mSpi2->rxBuffer[i];
+//			App::mApp->mSpi2->AvailableLength++;
+//			if(App::mApp->mSpi2->BufferCount >= 2047){
+//				App::mApp->mSpi2->BufferCount = 0;
+//			}
+//		}
+//		DMA_Cmd(DMA1_Stream3, ENABLE);
+//	}
+//}
+
+void DMA1_Stream4_IRQHandler(){
+	if(DMA_GetITStatus(DMA1_Stream4, DMA_IT_TCIF4) == SET)
+	{
+		DMA_ClearITPendingBit (DMA1_Stream4, DMA_IT_TCIF4);
+		DMA_Cmd(DMA1_Stream4, DISABLE);
+		App::mApp->mTicks->setTimeout(3);
+		while(SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET){
+			if(App::mApp->mTicks->Timeout()){
+				return;
+			}
+		}
+		App::mApp->mUART3->isDmaBusy = false;
+	}
+}
+
 void SPI1_IRQHandler()
 {
 	App::mApp->mTicks->setTimeout(3);
@@ -115,7 +152,7 @@ Spi::SpiConfiguration::SpiConfiguration(SPIConfx spiConfx,
 				NumOfDevices(numOfDevices){
 }
 
-Spi::Spi(SpiConfiguration* conf) : Conf(conf), Spix(0), BufferCount(0), pBuffer(Buffer), AvailableLength(0), pSlaveTxBuffer(SlaveTxBuffer), SlaveTxLength(0), SlaveTxBufferCount(0){
+Spi::Spi(SpiConfiguration* conf) : isDmaBusy(false), Conf(conf), Spix(0), BufferCount(0), pBuffer(Buffer), AvailableLength(0), pSlaveTxBuffer(SlaveTxBuffer), SlaveTxLength(0), SlaveTxBufferCount(0){
 	Initialize(conf);
 }
 
@@ -123,8 +160,13 @@ void Spi::Initialize(SpiConfiguration* conf){
 	GPIO_InitTypeDef GPIO_InitStructure;
 	SPI_InitTypeDef SPI_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
+	DMA_InitTypeDef DMA_InitStructure;
 	uint16_t prescaler;
 	uint8_t GPIO_AF_SPIx;
+
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
 	if(conf->SpiConfx == SpiConfiguration::SpiConf1){
 		Spix = SPI1;
@@ -135,8 +177,68 @@ void Spi::Initialize(SpiConfiguration* conf){
 	else if(conf->SpiConfx == SpiConfiguration::SpiConf2){
 		Spix = SPI2;
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-		NVIC_InitStructure.NVIC_IRQChannel = SPI2_IRQn;
+		//NVIC_InitStructure.NVIC_IRQChannel = SPI2_IRQn;
 		GPIO_AF_SPIx = GPIO_AF_SPI2;
+
+		DMA_DeInit(DMA1_Stream4);
+		RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
+
+		DMA_InitStructure.DMA_BufferSize = 32;
+		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+		DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+		DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+		DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+		DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(SPI2->DR)) ;
+		DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+		DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+
+		DMA_InitStructure.DMA_Channel = DMA_Channel_0 ;
+		DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral ;
+		DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(txBuffer) ;
+		DMA_Init(DMA1_Stream4, &DMA_InitStructure);
+
+		NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream4_IRQn;
+		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+		NVIC_Init (&NVIC_InitStructure);
+
+		SPI_I2S_DMACmd(SPI2, SPI_I2S_DMAReq_Tx, ENABLE);
+		DMA_ITConfig (DMA1_Stream0, DMA_IT_TC, ENABLE);
+
+		DMA_DeInit(DMA1_Stream3);
+		RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
+
+		DMA_InitStructure.DMA_BufferSize = 5;
+		DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
+		DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
+		DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
+		DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+		DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+		DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+		DMA_InitStructure.DMA_PeripheralBaseAddr =(uint32_t) (&(SPI2->DR)) ;
+		DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+		DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+		DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+		DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+
+		DMA_InitStructure.DMA_Channel = DMA_Channel_0 ;
+		DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory ;
+		DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)(rxBuffer) ;
+		DMA_Init(DMA1_Stream4, &DMA_InitStructure);
+
+		NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream4_IRQn;
+		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+		NVIC_Init (&NVIC_InitStructure);
+
+		SPI_I2S_DMACmd(SPI2, SPI_I2S_DMAReq_Rx, ENABLE);
+		DMA_ITConfig (DMA1_Stream0, DMA_IT_TC, ENABLE);
 	}
 
 	SPI_I2S_DeInit(Spix);
@@ -169,12 +271,6 @@ void Spi::Initialize(SpiConfiguration* conf){
 		default:
 			break;
 	}
-
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-
 
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
@@ -285,7 +381,8 @@ void Spi::Initialize(SpiConfiguration* conf){
 	GPIO_PinAFConfig(conf->MOSI->_port, mosiSource, GPIO_AF_SPIx);
 
 
-	SPI_I2S_ITConfig(Spix, SPI_I2S_IT_RXNE, ENABLE);
+//	SPI_I2S_ITConfig(Spix, SPI_I2S_IT_RXNE, ENABLE);
+
 	SPI_Init(Spix, &SPI_InitStructure);
 	SPI_Cmd(Spix, ENABLE);
 }
@@ -312,25 +409,12 @@ bool Spi::Byte(uint8_t byte, uint8_t* data){
 	SPI_I2S_SendData(Spix, byte);
 
 	App::mApp->mTicks->setTimeout(3);
-	while(SPI_I2S_GetFlagStatus(Spix, SPI_I2S_FLAG_TXE) == RESET){
+	while(SPI_I2S_GetFlagStatus(Spix, SPI_I2S_FLAG_RXNE) == RESET){
 		if(App::mApp->mTicks->Timeout()){
 			return false;
 		}
 	}
-//	*data = (uint8_t)SPI_I2S_ReceiveData(Spix);
-
-	App::mApp->mTicks->setTimeout(3);
-	while(AvailableLength == 0){
-		if(App::mApp->mTicks->Timeout()){
-			printf("SPI_ERROR");
-			return false;
-		}
-	}
-	uint8_t ch[2];
-	if(Read((char*)ch, 1) < 0){
-		return false;
-	}
-	*data = (uint8_t)(ch[0]);
+	*data = (uint8_t)SPI_I2S_ReceiveData(Spix);
 	return true;
 }
 
@@ -375,7 +459,9 @@ void Spi::Print(int index, const char* pstr, ...)
 		length++;
 	}
 	if(Conf->IsSlave){
-		setSlaveTxBuffer(txBuffer, length);
+		//setSlaveTxBuffer(txBuffer, length);
+		DMA_SetCurrDataCounter(DMA1_Stream4, length);
+		DMA_Cmd(DMA1_Stream4, ENABLE);
 	}
 	else{
 		for(int i = 0; i < length; i++){

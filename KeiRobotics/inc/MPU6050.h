@@ -16,6 +16,16 @@
 using Eigen::Vector3f;
 
 namespace Sensors{
+	class MPU6050Configuration{
+		public:
+			MPU6050Configuration(Communication::I2C* i2c, Vector3f AccPos, Vector3f AccNeg, Vector3f OmegaScale, Vector3f OmegaOffset);
+			Communication::I2C* _i2c;
+			Vector3f _AccPos;
+			Vector3f _AccNeg;
+			Vector3f _OmegaScale;
+			Vector3f _OmegaOffset;
+		private:
+	};
 
 	class MPU6050{
 		public:
@@ -131,7 +141,7 @@ namespace Sensors{
 				  	 RA_FIFO_R_W = 0x74,
 				  	 RA_WHO_AM_I = 0x75};
 
-			MPU6050(Communication::I2C* i2c);
+			MPU6050(MPU6050Configuration* conf);
 			void setI2CBypass(bool onState);
 			bool Update();
 			void setTemperature(float value);
@@ -148,15 +158,9 @@ namespace Sensors{
 			Vector3f getRawOmegaOffset();
 			bool getIsValided();
 			Communication::I2C* i2cx;
+			MPU6050Configuration* Conf;
 
 		private:
-
-			static float RawAccPosX;
-			static float RawAccNegX;
-			static float RawAccPosY;
-			static float RawAccNegY;
-			static float RawAccPosZ;
-			static float RawAccNegZ;
 
 			bool isValided;
 			Vector3f RawAcc;

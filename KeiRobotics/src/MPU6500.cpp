@@ -185,8 +185,8 @@ bool MPU6500::Update(){
 	for(int i = 0; i < 3; i++){
 		RawAcc[i] *= RawAccScale[i];
 		RawAcc[i] -= RawAccOffset[i];
-//		RawOmega[i] -= getGyroTemperatureCompensation(DevIndex, i, temperature);
-//		RawOmega[i] = MathTools::CutOff(RawOmega[i], 0.0f, 2.0f);
+		RawOmega[i] -= getGyroTemperatureCompensation(DevIndex, i, temperature);
+		RawOmega[i] = MathTools::CutOff(RawOmega[i], 0.0f, 1.0f);
 
 //		if(fabs(RawOmega[i] - PrevRawOmega[i]) > 1500.0f){
 //			RawOmega[i] = PrevRawOmega[i];
@@ -209,13 +209,13 @@ float MPU6500::getGyroTemperatureCompensation(int index, int channel, float temp
 		case 0:
 			switch(channel){
 				case 0:
-					value = -40.0f;//-1.5f;//-4.5f;//0.0005f*temp*temp - 0.0799f*temp + 12.212f;
+					value = -2.0f;//-1.5f;//-4.5f;//0.0005f*temp*temp - 0.0799f*temp + 12.212f;
 					break;
 				case 1:
-					value = 6.0f;//9.0f;//-0.0002f*temp*temp - 0.0039f*temp + 4.6503f;
+					value = 0.8f;//9.0f;//-0.0002f*temp*temp - 0.0039f*temp + 4.6503f;
 					break;
 				case 2:
-					value = -0.3f;//0.00007*temp*temp + 0.0047f*temp - 0.8594f;
+					value = -0.55f;//0.00007*temp*temp + 0.0047f*temp - 0.8594f;
 					break;
 			}
 			break;

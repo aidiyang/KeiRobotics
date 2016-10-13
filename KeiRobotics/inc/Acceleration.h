@@ -38,13 +38,11 @@ namespace Inertia{
 			Acceleration(Sensors::MPU6500* mMPU6500);
 			void Update();
 			Vector3f getAcc();
-			Vector3f getFilteredAcc();
-			void setAcc(Vector3f value);
 			Vector3f getAngle();
+			Vector3f getFilteredAcc();
 			Vector3f getFilteredAngle();
+			void setAcc(Vector3f value);
 			bool getIsValided();
-			bool isMPU6500;
-			Kalman* AccKalman;
 
 		private:
 			Sensors::MPU6050* _mMPU6050;
@@ -52,7 +50,8 @@ namespace Inertia{
 			bool isValided;
 			Vector3f Acc;
 			Vector3f FilteredAcc;
-			MovingWindowAverageFilter* mAccMovingWindowAverageFilter[3];
+			Kalman* AccKalman;
+			bool isMPU6500;
 	};
 };
 

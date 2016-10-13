@@ -26,6 +26,11 @@ using namespace Communication;
 using namespace Control;
 using namespace Sensors;
 
+namespace Sensors{
+	class ADCConfiguration;
+	class ADConverter;
+};
+
 namespace System{
 
 	class Config{
@@ -81,7 +86,22 @@ namespace System{
 			UART::UARTConfiguration* UART5Conf2;
 			PWM::PWMConfiguration* mPWMConf1;
 			InputCaptureConfiguration* mInputCaptureConf1;
-			ADConverter::ADCConfiguration* ADCConf1;
+			ADCConfiguration* ADCConf1;
+			ADCConfiguration* ADCConf2;
+			ADCConfiguration* ADCConf3;
+			ADCConfiguration* ADCConf4;
+			ADCConfiguration* ADCConf5;
+			ADCConfiguration* ADCConf6;
+			ADCConfiguration* ADCConf7;
+			ADCConfiguration* ADCConf8;
+			ADCConfiguration* ADCConf9;
+			ADCConfiguration* ADCConf10;
+			ADCConfiguration* ADCConf11;
+			ADCConfiguration* ADCConf12;
+			ADCConfiguration* ADCConf13;
+			ADCConfiguration* ADCConf14;
+			ADCConfiguration* ADCConf15;
+			ADCConfiguration* ADCConf16;
 			I2C::I2CConfiguration* I2C1Conf1;
 			I2C::I2CConfiguration* I2C1Conf2;
 			I2C::I2CConfiguration* I2C2Conf1;

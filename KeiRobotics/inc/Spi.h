@@ -10,6 +10,7 @@
 
 #include <inttypes.h>
 #include <stm32f4xx_spi.h>
+#include <stm32f4xx_dma.h>
 #include <Configuration.h>
 
 using namespace System;
@@ -60,12 +61,14 @@ namespace Communication{
 			char* pBuffer;
 			int AvailableLength;
 			char txBuffer[2048];
+			char rxBuffer[5];
 			SPI_TypeDef* Spix;
+			bool isDmaBusy;
+			void ChipSelect(int index);
+			void ChipDeSelect(int index);
 
 		private:
 
-			void ChipSelect(int index);
-			void ChipDeSelect(int index);
 	};
 };
 

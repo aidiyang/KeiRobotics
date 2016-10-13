@@ -12,12 +12,13 @@ using namespace System;
 using namespace Sensors;
 using namespace Math;
 
-float MPU6050::RawAccPosX =	10.1f;
-float MPU6050::RawAccNegX =	-9.6f;
-float MPU6050::RawAccPosY =	9.8f;
-float MPU6050::RawAccNegY =	-9.9f;
-float MPU6050::RawAccPosZ =	10.0f;
-float MPU6050::RawAccNegZ =	-10.0f;
+MPU6050Configuration::MPU6050Configuration(Communication::I2C* i2c,
+											Vector3f AccPos, Vector3f AccNeg,
+											Vector3f OmegaScale, Vector3f OmegaOffset) : _i2c(i2c),
+													_AccPos(AccPos),
+													_AccNeg(AccNeg),
+													_OmegaScale(OmegaScale),
+													_OmegaOffset(OmegaOffset){}
 
 void MPU6050::setI2CBypass(bool onState){
 	uint8_t data = 0;
@@ -32,22 +33,14 @@ void MPU6050::setI2CBypass(bool onState){
 	}
 }
 
-MPU6050::MPU6050(Communication::I2C* i2c) : i2cx(i2c), isValided(false){
-
-	RawAccScale[0] = 2.0f * Inertia::Acceleration::Gravity / (RawAccPosX - RawAccNegX);
-	RawAccScale[1] = 2.0f * Inertia::Acceleration::Gravity / (RawAccPosY - RawAccNegY);
-	RawAccScale[2] = 2.0f * Inertia::Acceleration::Gravity / (RawAccPosZ - RawAccNegZ);
-	RawAccOffset[0] = RawAccPosX * RawAccScale[0] - Inertia::Acceleration::Gravity;
-	RawAccOffset[1] = RawAccPosY * RawAccScale[1] - Inertia::Acceleration::Gravity;
-	RawAccOffset[2] = RawAccPosZ * RawAccScale[2] - Inertia::Acceleration::Gravity;
+MPU6050::MPU6050(MPU6050Configuration* conf) : Conf(conf), i2cx(conf->_i2c), isValided(false){
+	for(int i = 0; i < 3; i++){
+		RawAccScale[i] = 2.0f * Inertia::Acceleration::Gravity / (conf->_AccPos[i] - conf->_AccNeg[i]);
+		RawAccOffset[i] = conf->_AccPos[i] * RawAccScale[i] - Inertia::Acceleration::Gravity;
+		RawOmegaScale[i] = conf->_OmegaScale[i];
+		RawOmegaOffset[i] = RawOmegaScale[i] * conf->_OmegaOffset[i];;
+	}
 	FastInitialization();
-
-	RawOmegaScale[0] = 1.0f;
-	RawOmegaScale[1] = 1.0f;
-	RawOmegaScale[2] = 1.0f;
-	RawOmegaOffset[0] = RawOmegaScale[0] * 1.5f;
-	RawOmegaOffset[1] = RawOmegaScale[1] * 7.8f;
-	RawOmegaOffset[2] = RawOmegaScale[2] * -0.4;
 	Update();
 }
 
@@ -126,7 +119,9 @@ bool MPU6050::Update(){
 //		RawOmega[i] -= getGyroTemperatureCompensation(i, temperature);
 		RawOmega[i] *= RawOmegaScale[i];
 		RawOmega[i] -= RawOmegaOffset[i];
-		RawOmega[i] = MathTools::CutOff(RawOmega[i], 0.0f, 1.0f);
+		if(RawOmegaOffset[i] != 0.0f){
+			RawOmega[i] = MathTools::CutOff(RawOmega[i], 0.0f, 1.0f);
+		}
 	}
 
 	isValided = true;

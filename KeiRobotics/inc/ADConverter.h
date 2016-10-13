@@ -14,20 +14,25 @@
 #include <stm32f4xx_gpio.h>
 #include <stm32f4xx_rcc.h>
 #include <inttypes.h>
+#include <App.h>
 
 using namespace System;
 
 namespace Sensors{
+
+	class ADCConfiguration{
+		public:
+			enum ADCMode{FreeRun, OneShot};
+			ADCConfiguration(Configuration* adc, uint8_t ADCChannel, uint8_t ADCCycles, ADCMode mode);
+			Configuration* _adc;
+			uint8_t _ADCChannel;
+			uint8_t _ADCCycles;
+			ADCMode Mode;
+		private:
+	};
+
 	class ADConverter{
 		public:
-			class ADCConfiguration{
-				public:
-					ADCConfiguration(Configuration* adc, uint8_t ADCChannel, uint8_t ADCCycles);
-					Configuration* _adc;
-					uint8_t _ADCChannel;
-					uint8_t _ADCCycles;
-				private:
-			};
 			ADConverter(ADCConfiguration* conf);
 			double getReading();
 		private:

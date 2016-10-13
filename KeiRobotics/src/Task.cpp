@@ -27,11 +27,11 @@ TaskObj::TaskObj(uint16_t period, pTask fn, string fnName, bool isPeriodic, int 
 	IsPeriodic = isPeriodic;
 	_BreakCout = BreakCout;
 	hangCount = 0;
-	printf("mTask[TasksNum]:%lx\r\n", mTask);
-	printf("TaskPeriod[TasksNum]:%d\r\n", TaskPeriod);
-	printf("TaskName[TasksNum]:%s\r\n", TaskName.c_str());
-	printf("IsPeriodic[TasksNum]:%d\r\n", IsPeriodic);
-	printf("_BreakCout[TasksNum]:%d\r\n", _BreakCout);
+//	printf("mTask[TasksNum]:%lx\r\n", mTask);
+//	printf("TaskPeriod[TasksNum]:%d\r\n", TaskPeriod);
+//	printf("TaskName[TasksNum]:%s\r\n", TaskName.c_str());
+//	printf("IsPeriodic[TasksNum]:%d\r\n", IsPeriodic);
+//	printf("_BreakCout[TasksNum]:%d\r\n", _BreakCout);
 }
 
 Task::Task() : mTicks(App::mApp->mTicks), OnWatchDog(App::mApp->mTicks->OnWatchDog), TasksNum(0), currentTaskNum(0), IsPrintTaskNum(false), KeepLoopping(true), Count(-1){
@@ -47,7 +47,7 @@ void Task::Attach(uint16_t period, pTask fn, string fnName, bool isPeriodic, int
 	mTaskObj[TasksNum] = new TaskObj(period, fn, fnName, isPeriodic, BreakCout);
 	TasksNum++;
 	KeepLoopping = keepLoopping;
-	printf("TasksNum:%d\r\n\n", TasksNum);
+//	printf("TasksNum:%d\r\n\n", TasksNum);
 }
 
 void Task::DeAttach(string fnName){

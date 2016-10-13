@@ -30,8 +30,9 @@ namespace System{
 		public:
 			class GPIOConfiguration{
 				public:
-					GPIOConfiguration(Configuration* gpio, BitAction onState);
+					GPIOConfiguration(Configuration* gpio, bool isOutput, BitAction onState);
 					Configuration* _gpio;
+					bool _isOutput;
 					BitAction _onState;
 					BitAction _offState;
 				private:
@@ -39,10 +40,12 @@ namespace System{
 			typedef void (*pBlink)();
 			GPIO(GPIOConfiguration* conf);
 			void GPIOControl(bool onState);
+			bool GPIORead();
 			void Toggle();
 			static void BlinkTask(Bundle* bundle);
 			void Blink(GPIO* pGPIO, bool onState, uint16_t period, int count = -1);
 			GPIOConfiguration* Conf;
+			bool IsOutput;
 		private:
 	};
 
