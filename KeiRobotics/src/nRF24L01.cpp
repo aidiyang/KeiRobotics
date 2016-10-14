@@ -59,6 +59,15 @@ uint8_t nRF24L01::ReadWrite(uint8_t data) {
 	return value;
 }
 
+void nRF24L01::WriteCmd(uint8_t cmd) {
+	uint8_t value = 0;
+	mSpi->ChipSelect(SpiIndex);
+	if(!mSpi->Byte(cmd, &value)){
+		return;
+	}
+	mSpi->ChipDeSelect(SpiIndex);
+}
+
 uint8_t nRF24L01::RWReg(uint8_t reg, uint8_t value){
 	uint8_t status;
 	mSpi->ChipSelect(SpiIndex);
@@ -122,7 +131,7 @@ void nRF24L01::RxMode(uint8_t RX_PAYLOAD) {
 	RWReg(nRF24_CMD_WREG | nRF24_REG_EN_RXADDR,0x01); // Enable data pipe 0
 	RWReg(nRF24_CMD_WREG | nRF24_REG_RF_CH,RxChannel); // Set frequency channel 110 (2.510MHz)
 	RWReg(nRF24_CMD_WREG | nRF24_REG_RX_PW_P0,RX_PAYLOAD); // Set RX payload length (10 bytes)
-	RWReg(nRF24_CMD_WREG | nRF24_REG_RF_SETUP,0x06); // Setup: 1Mbps, 0dBm, LNA off
+	RWReg(nRF24_CMD_WREG | nRF24_REG_RF_SETUP,0x07); // Setup: 1Mbps, 0dBm, LNA off
 	RWReg(nRF24_CMD_WREG | nRF24_REG_CONFIG,0x0F); // Config: CRC on (2 bytes), Power UP, RX/TX ctl = PRX
 	mCE->GPIOControl(true);
 	Delay::DelayUS(10);
@@ -159,26 +168,25 @@ uint8_t nRF24L01::RxPacket(uint8_t* pBuf, uint8_t RX_PAYLOAD) {
     		// pipe 0
     		ReadBuf(nRF24_CMD_R_RX_PAYLOAD,pBuf,RX_PAYLOAD); // read received payload from RX FIFO buffer
     	}
-		ReadWrite(nRF24_CMD_FLUSH_RX); // Flush RX FIFO buffer
+    	WriteCmd(nRF24_CMD_FLUSH_RX); // Flush RX FIFO buffer
 		RWReg(nRF24_CMD_WREG | nRF24_REG_STATUS,status | 0x70); // Clear RX_DR, TX_DS, MAX_RT flags
 	    //return nRF24_MASK_RX_DR;
 	    return status;
     }
 
     // Some banana happens
-	ReadWrite(nRF24_CMD_FLUSH_RX); // Flush RX FIFO buffer
+    WriteCmd(nRF24_CMD_FLUSH_RX); // Flush RX FIFO buffer
 	RWReg(nRF24_CMD_WREG | nRF24_REG_STATUS,status | 0x70); // Clear RX_DR, TX_DS, MAX_RT flags
     return status;
 }
 
 uint8_t nRF24L01::TxPacket(uint8_t * pBuf, uint8_t TX_PAYLOAD) {
     uint8_t status;
-    TxMode();
 	mCE->GPIOControl(false);
     WriteBuf(nRF24_CMD_WREG | nRF24_REG_TX_ADDR,TxAddr,TxLength); // Set static TX address
     WriteBuf(nRF24_CMD_WREG | nRF24_REG_RX_ADDR_P0,RxAddr,RxLength); // Set static RX address for auto ack
     RWReg(nRF24_CMD_WREG | nRF24_REG_EN_AA,0x01); // Enable auto acknowledgement for data pipe 0
-    RWReg(nRF24_CMD_WREG | nRF24_REG_SETUP_RETR,0x1A); // Automatic retransmission: wait 500us, 10 retries
+    RWReg(nRF24_CMD_WREG | nRF24_REG_SETUP_RETR,0x10); // Automatic retransmission: wait 500us, 10 retries
 	RWReg(nRF24_CMD_WREG | nRF24_REG_RF_CH,TxChannel); // Set frequency channel 110 (2.510MHz)
     RWReg(nRF24_CMD_WREG | nRF24_REG_RF_SETUP,0x07); // Setup: 1Mbps, 0dBm, LNA on
     WriteBuf(nRF24_CMD_W_TX_PAYLOAD,pBuf,TX_PAYLOAD); // Write specified buffer to FIFO

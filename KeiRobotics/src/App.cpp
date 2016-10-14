@@ -92,33 +92,33 @@ void printRF(Bundle* bundle){
 		case 0:
 			if(index < 3){
 				if(index == 0){
-					App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->RollOffset));
+					App::mApp->mCommunicating2->Send(index+3*(App::mApp->DeviceIndex-1), (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->RollOffset));
 				}
 				else if(index == 1){
-					App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->PitchOffset));
+					App::mApp->mCommunicating2->Send(index+3*(App::mApp->DeviceIndex-1), (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->PitchOffset));
 				}
 				else if(index == 2){
-					App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->YawOffset));
+					App::mApp->mCommunicating2->Send(index+3*(App::mApp->DeviceIndex-1), (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[index]) - App::mApp->mControlling->YawOffset));
 				}
 			}
 			break;
 		case 1:
 			if(index < 3){
-				App::mApp->mCommunicating2->Send(index, (float)(App::mApp->mMPU6050->getRawOmega()[index]));
+				App::mApp->mCommunicating2->Send(index+3*(App::mApp->DeviceIndex-1), (float)(App::mApp->mMPU6050->getRawOmega()[index]));
 			}
 			break;
 		case 2:
 			if(index == 0){
-				App::mApp->mCommunicating2->Send(0, App::mApp->mControlling->Motor1PWM);
+				App::mApp->mCommunicating2->Send(0+3*(App::mApp->DeviceIndex-1), App::mApp->mControlling->Motor1PWM);
 			}
 			else if(index == 1){
-				App::mApp->mCommunicating2->Send(1, App::mApp->mControlling->Motor2PWM);
+				App::mApp->mCommunicating2->Send(1+3*(App::mApp->DeviceIndex-1), App::mApp->mControlling->Motor2PWM);
 			}
 			else if(index == 2){
-				App::mApp->mCommunicating2->Send(2, App::mApp->mControlling->Motor3PWM);
+				App::mApp->mCommunicating2->Send(2+3*(App::mApp->DeviceIndex-1), App::mApp->mControlling->Motor3PWM);
 			}
 			else if(index == 3){
-				App::mApp->mCommunicating2->Send(3, App::mApp->mControlling->Motor4PWM);
+				App::mApp->mCommunicating2->Send(3+3*(App::mApp->DeviceIndex-1), App::mApp->mControlling->Motor4PWM);
 			}
 			break;
 	}
@@ -569,13 +569,13 @@ void App::AppInit(){
 App::App() : error(0), debugCount(0), arrived(false), PeriodicData(0), PeriodicCmd(0), PeriodicData2(0), PeriodicCmd2(0), trigger(false), Motor1Target(0), Motor2Target(0), Motor3Target(0), mCompass(0), mEncoderYaw(0), PathState(0){
 
 	AppInit();
-	DeviceIndex = 0;
+	DeviceIndex = 3;
 	Channel = new uint8_t[5];
-	Channel[0] = 0x6e;
-	Channel[1] = 0x3e;
-	Channel[2] = 0x1e;
-	Channel[3] = 0x0e;
-	Channel[4] = 0x5e;
+	Channel[0] = 0x3e;
+	Channel[1] = 0x1e;
+	Channel[2] = 0x0e;
+	Channel[3] = 0x06;
+	Channel[4] = 0x02;
 	Com1 = new Com(Com::__UART, (uint32_t)mUART1);
 	mCommunicating1 = new Communicating(Com1);
 	mPWM = new PWM(mConfig->mPWMConf1);
@@ -619,7 +619,21 @@ App::App() : error(0), debugCount(0), arrived(false), PeriodicData(0), PeriodicC
 	Vector3f OmegaScale;
 	OmegaScale << 1,1,1;;
 	Vector3f OmegaOffset;
-	OmegaOffset << 8.9,1.8,0.8;
+	if(DeviceIndex == 0){
+		OmegaOffset << 0,0,0;
+	}
+	else if(DeviceIndex == 1){
+		OmegaOffset << 1.5,0.95,-0.45;
+	}
+	else if(DeviceIndex == 2){
+		OmegaOffset << 2.0,0.05,-1.0;
+	}
+	else if(DeviceIndex == 3){
+		OmegaOffset << 0,0,0;
+	}
+	else if(DeviceIndex == 4){
+		OmegaOffset << 0,0,0;
+	}
 	if(DeviceIndex != 0){
 		mMPU6050Config = new MPU6050Configuration(mI2C1, AccPos, AccNeg, OmegaScale, OmegaOffset);
 		mMPU6050 = new MPU6050(mMPU6050Config);
@@ -631,13 +645,15 @@ App::App() : error(0), debugCount(0), arrived(false), PeriodicData(0), PeriodicC
 		mTask->Attach(20, UpdateTask, "UpdateTask", true);
 	}
 //	mTask->Attach(20, ControlTask, "ControlTask", true);
-	mTask->Attach(20, ReceiveTask, "ReceiveTask", true);
-	mTask->Attach(20, SendTask, "SendTask", true);
-	if(DeviceIndex == 0){
-		mTask->Attach(100, SelectPrintRF, "SelectPrintRF", true);
+	mTask->Attach(2, ReceiveTask, "ReceiveTask", true);
+	mTask->Attach(2, SendTask, "SendTask", true);
+//	if(DeviceIndex == 0){
+//		mTask->Attach(20, SelectPrintRF, "SelectPrintRF", true);
+//	}
+	if(DeviceIndex != 0){
+		mTask->Attach(40, print, "print", true);
+		mTask->Attach(40, printRF, "printRF", true);
 	}
-//	mTask->Attach(20, print, "print", true);
-//	mTask->Attach(40, printRF, "printRF", true);
 
 	mTask->Run(true);
 }

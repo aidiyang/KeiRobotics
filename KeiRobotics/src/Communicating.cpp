@@ -10,6 +10,7 @@
 using namespace Communication;
 using namespace Math;
 using namespace Control;
+using namespace System;
 
 Com::Com(Interface interface, uint32_t addr, int index) : _interface(interface), Index(index){
 	switch(interface){
@@ -73,7 +74,9 @@ void Communicating::ReceivePoll(){
 				int halfInt = (((int)d[1]) << 8) | ((int)d[2]);
 				Data = MathTools::HalfIntToFloat(halfInt);
 				Cmd = d[0];
-				Execute(Cmd, Data);
+				if(Data == Data){
+					Execute(Cmd, Data);
+				}
 			}
 		}
 		if(startPos > -1){
@@ -111,18 +114,51 @@ void Communicating::SendPoll(){
 	txBufferCount = 0;
 }
 
+void MultiSendTask(Bundle* bundle){
+	static int index = 0;
+	App::mApp->mnRF24L01->TxChannel = App::mApp->Channel[index+1];
+	App::mApp->mCommunicating2->Send(bundle->Cmd, bundle->Data);
+	App::mApp->mCommunicating2->Send(bundle->Cmd, bundle->Data);
+//	printf("i:%d addr:%x\r\n", index, App::mApp->Channel[index+1]);
+	if(index == 3){
+		index = 0;
+	}
+	else{
+		index++;
+	}
+}
+
 void Communicating::Execute(int cmd, float data){
 	if(this == App::mApp->mCommunicating1){
-		for(int i = 0; i < 4; i++){
-			App::mApp->mnRF24L01->TxChannel = App::mApp->Channel[i+1];
-			App::mApp->mCommunicating2->Send(cmd, data);
-			Delay::DelayMS(5);
+//		printf("cmd:%d data:%g\r\n", cmd , data);
+		App::mApp->mTask->mBundle->Cmd = cmd;
+		App::mApp->mTask->mBundle->Data = data;
+		App::mApp->mTask->Attach(500, MultiSendTask, "MultiSendTask", false, 4);
+		switch(cmd){
+			case CMD::PRINT_MODE:
+				if(App::mApp->DeviceIndex != 0){
+					PrintType = data;
+					Acknowledgement();
+				}
+				break;
+			case CMD::RESET_ALL:
+				if(App::mApp->DeviceIndex != 0){
+					if(App::mApp->mCompass != 0){
+						App::mApp->mCompass->Reset();
+					}
+					App::mApp->mQuaternion->Reset();
+					Acknowledgement();
+		//					printf("RESET\r\n");
+				}
+				break;
 		}
 		Acknowledgement();
 	}
 	else if(this == App::mApp->mCommunicating2){
+//		printf("cmd:%d data:%g\r\n", cmd , data);
 		if(App::mApp->DeviceIndex == 0){
 			App::mApp->mCommunicating1->Send(cmd, data);
+			Acknowledgement();
 		}
 		switch(cmd){
 			case CMD::PRINT_MODE:
@@ -138,7 +174,7 @@ void Communicating::Execute(int cmd, float data){
 					}
 					App::mApp->mQuaternion->Reset();
 					Acknowledgement();
-					printf("RESETED\r\n");
+//					printf("RESET\r\n");
 				}
 				break;
 			case CMD::DEV1FB:

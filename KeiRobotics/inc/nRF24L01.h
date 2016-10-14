@@ -80,6 +80,7 @@ namespace Communication{
 			uint8_t ReadWrite(uint8_t data);
 			uint8_t RWReg(uint8_t reg, uint8_t value);
 			uint8_t ReadReg(uint8_t reg);
+			void WriteCmd(uint8_t cmd);
 			uint8_t ReadBuf(uint8_t reg, uint8_t *pBuf, uint8_t count);
 			uint8_t WriteBuf(uint8_t reg, uint8_t *pBuf, uint8_t count);
 			uint8_t Check(void);

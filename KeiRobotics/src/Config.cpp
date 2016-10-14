@@ -64,7 +64,7 @@ Config::Config(){
 //	CS[4] = new Configuration(GPIOE, GPIO_Pin_4);
 //	CS[5] = new Configuration(GPIOE, GPIO_Pin_5);
 
-	Spi1Conf1 = new Spi::SpiConfiguration(Spi::SpiConfiguration::SpiConf1, Spi::SpiConfiguration::PRESCALER128, Spi::SpiConfiguration::SPIMODE0,
+	Spi1Conf1 = new Spi::SpiConfiguration(Spi::SpiConfiguration::SpiConf1, Spi::SpiConfiguration::PRESCALER8, Spi::SpiConfiguration::SPIMODE0,
 //										  new Configuration(GPIOA, GPIO_Pin_5),
 //										  new Configuration(GPIOA, GPIO_Pin_6),
 //										  new Configuration(GPIOA, GPIO_Pin_7), CS, false, 6);

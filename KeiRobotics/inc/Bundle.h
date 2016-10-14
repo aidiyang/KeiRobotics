@@ -30,6 +30,8 @@ namespace System{
 			BlinkObj** mBlinkObj;
 			int BlinkObjNum;
 			TaskObj* mTaskObj;
+			int Cmd;
+			float Data;
 	};
 
 };

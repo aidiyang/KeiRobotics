@@ -30,6 +30,7 @@
 #include <MPU6050.h>
 #include <Spi.h>
 #include <nRF24L01.h>
+#include <Bundle.h>
 
 namespace Communication{
 
