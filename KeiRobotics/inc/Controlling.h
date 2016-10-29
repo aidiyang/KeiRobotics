@@ -37,7 +37,7 @@ namespace Control{
 
 	class Controlling{
 		public:
-			Controlling(PWM* mPWM);
+			Controlling(PWM* mPWM, Encoder* encoder1, Encoder* encoder2, Encoder* encoder3);
 			void ControllingPoll();
 			void Starting();
 			void Stopping();
@@ -75,7 +75,6 @@ namespace Control{
 			Encoder* Encoder1;
 			Encoder* Encoder2;
 			Encoder* Encoder3;
-			Encoder* Encoder4;
 			Pid* RollPid;
 			Pid* PitchPid;
 			Pid* KdRollPid;

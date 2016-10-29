@@ -12,7 +12,7 @@
 
 using namespace Control;
 
-PWM::PWMConfiguration::PWMConfiguration(Configuration* pwm1, Configuration* pwm2, Configuration* pwm3, Configuration* pwm4, float freq) : _pwm1(pwm1), _pwm2(pwm2), _pwm3(pwm3), _pwm4(pwm4), _freq(freq){
+PWM::PWMConfiguration::PWMConfiguration(Configuration* pwm1, Configuration* pwm2, Configuration* pwm3, Configuration* pwm4, float freq, int isActiveLow) : _pwm1(pwm1), _pwm2(pwm2), _pwm3(pwm3), _pwm4(pwm4), _freq(freq), IsActiveLow(isActiveLow){
 };
 
 PWM::PWM(PWMConfiguration* conf) : Conf(conf), MinPWM(0), MaxPWM(10000){
@@ -99,11 +99,11 @@ PWM::PWM(PWMConfiguration* conf) : Conf(conf), MinPWM(0), MaxPWM(10000){
 	TIM_ARRPreloadConfig(TIM12, ENABLE);
 	TIM_Cmd(TIM12, ENABLE);
 	TIM_CtrlPWMOutputs(TIM12, ENABLE);
-
-	Control1(0);
-	Control2(0);
-	Control3(0);
-	Control4(0);
+	IsActiveLow = conf->IsActiveLow;
+	Control1(MinPWM);
+	Control2(MinPWM);
+	Control3(MinPWM);
+	Control4(MinPWM);
 }
 
 void PWM::Control1(float dutyCycle){
@@ -116,7 +116,12 @@ void PWM::Control1(float dutyCycle){
 		value += (uint16_t)(UpperLimit1 * dutyCycle / 10000.0);
 		value = value > UpperLimit1 ? UpperLimit1 : value;
 	}
-	TIM_SetCompare1(TIM9, value);
+	if(IsActiveLow){
+		TIM_SetCompare1(TIM9, MaxPWM - value);
+	}
+	else{
+		TIM_SetCompare1(TIM9, value);
+	}
 }
 
 void PWM::Control2(float dutyCycle){
@@ -129,7 +134,12 @@ void PWM::Control2(float dutyCycle){
 		value += (uint16_t)(UpperLimit1 * dutyCycle / 10000);
 		value = value > UpperLimit1 ? UpperLimit1 : value;
 	}
-	TIM_SetCompare2(TIM9, value);
+	if(IsActiveLow){
+		TIM_SetCompare2(TIM9, MaxPWM - value);
+	}
+	else{
+		TIM_SetCompare2(TIM9, value);
+	}
 }
 
 void PWM::Control3(float dutyCycle){
@@ -142,7 +152,12 @@ void PWM::Control3(float dutyCycle){
 		value += (uint16_t)(UpperLimit2 * dutyCycle / 10000);
 		value = value > UpperLimit2 ? UpperLimit2 : value;
 	}
-	TIM_SetCompare1(TIM12, value);
+	if(IsActiveLow){
+		TIM_SetCompare1(TIM12, MaxPWM - value);
+	}
+	else{
+		TIM_SetCompare1(TIM12, value);
+	}
 }
 
 void PWM::Control4(float dutyCycle){
@@ -155,5 +170,10 @@ void PWM::Control4(float dutyCycle){
 		value += (uint16_t)(UpperLimit2 * dutyCycle / 10000);
 		value = value > UpperLimit2 ? UpperLimit2 : value;
 	}
-	TIM_SetCompare2(TIM12, value);
+	if(IsActiveLow){
+		TIM_SetCompare2(TIM12, MaxPWM - value);
+	}
+	else{
+		TIM_SetCompare2(TIM12, value);
+	}
 }

@@ -19,12 +19,13 @@ namespace Control{
 		public:
 			class PWMConfiguration{
 				public:
-					PWMConfiguration(Configuration* pwm1, Configuration* pwm2, Configuration* pwm3, Configuration* pwm4, float freq);
+					PWMConfiguration(Configuration* pwm1, Configuration* pwm2, Configuration* pwm3, Configuration* pwm4, float freq, int isActiveLow = false);
 					Configuration* _pwm1;
 					Configuration* _pwm2;
 					Configuration* _pwm3;
 					Configuration* _pwm4;
 					float _freq;
+					int IsActiveLow;
 				private:
 			};
 			PWM(PWMConfiguration* conf);
@@ -38,6 +39,7 @@ namespace Control{
 			float MinPWM;
 			float UpperLimit1;
 			float UpperLimit2;
+			int IsActiveLow;
 	};
 };
 

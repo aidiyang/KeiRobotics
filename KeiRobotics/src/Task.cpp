@@ -76,6 +76,9 @@ void Task::Run(bool isPrintTaskNum){
 
 	uint16_t ticksImg = 0;
 	bool isBreak = false;
+
+	__enable_irq();
+
 	do{
 		if(mTicks->getTicks() != ticksImg){
 			ticksImg = mTicks->getTicks();
@@ -110,6 +113,5 @@ void Task::Run(bool isPrintTaskNum){
 				}
 			}
 		}
-
 	}while(KeepLoopping || !isBreak);
 }

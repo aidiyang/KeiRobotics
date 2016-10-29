@@ -129,144 +129,9 @@ void MultiSendTask(Bundle* bundle){
 }
 
 void Communicating::Execute(int cmd, float data){
-	if(this == App::mApp->mCommunicating1){
-//		printf("cmd:%d data:%g\r\n", cmd , data);
-		App::mApp->mTask->mBundle->Cmd = cmd;
-		App::mApp->mTask->mBundle->Data = data;
-		App::mApp->mTask->Attach(500, MultiSendTask, "MultiSendTask", false, 4);
-		switch(cmd){
-			case CMD::PRINT_MODE:
-				if(App::mApp->DeviceIndex != 0){
-					PrintType = data;
-					Acknowledgement();
-				}
-				break;
-			case CMD::RESET_ALL:
-				if(App::mApp->DeviceIndex != 0){
-					if(App::mApp->mCompass != 0){
-						App::mApp->mCompass->Reset();
-					}
-					App::mApp->mQuaternion->Reset();
-					Acknowledgement();
-		//					printf("RESET\r\n");
-				}
-				break;
-		}
-		Acknowledgement();
-	}
-	else if(this == App::mApp->mCommunicating2){
-//		printf("cmd:%d data:%g\r\n", cmd , data);
-		if(App::mApp->DeviceIndex == 0){
-			App::mApp->mCommunicating1->Send(cmd, data);
-			Acknowledgement();
-		}
-		switch(cmd){
-			case CMD::PRINT_MODE:
-				if(App::mApp->DeviceIndex != 0){
-					PrintType = data;
-					Acknowledgement();
-				}
-				break;
-			case CMD::RESET_ALL:
-				if(App::mApp->DeviceIndex != 0){
-					if(App::mApp->mCompass != 0){
-						App::mApp->mCompass->Reset();
-					}
-					App::mApp->mQuaternion->Reset();
-					Acknowledgement();
-//					printf("RESET\r\n");
-				}
-				break;
-			case CMD::DEV1FB:
-				if(App::mApp->DeviceIndex == 1){
-					static int index = 0;
-					if(index == 0){
-						App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0])));
-					}
-					else if(index == 1){
-						App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1])));
-					}
-					else if(index == 2){
-						App::mApp->mCommunicating2->Send(index, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2])));
-					}
-					if(index == 2){
-						index = 0;
-					}
-					else{
-						index++;
-					}
-					Acknowledgement();
-				}
-				break;
-			case CMD::DEV2FB:
-				if(App::mApp->DeviceIndex == 2){
-					static int index = 0;
-					if(index == 0){
-						App::mApp->mCommunicating2->Send(index+3, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0])));
-					}
-					else if(index == 1){
-						App::mApp->mCommunicating2->Send(index+3, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1])));
-					}
-					else if(index == 2){
-						App::mApp->mCommunicating2->Send(index+3, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2])));
-					}
-					if(index == 2){
-						index = 0;
-					}
-					else{
-						index++;
-					}
-					Acknowledgement();
-				}
-				break;
-			case CMD::DEV3FB:
-				if(App::mApp->DeviceIndex == 3){
-					static int index = 0;
-					if(index == 0){
-						App::mApp->mCommunicating2->Send(index+6, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0])));
-					}
-					else if(index == 1){
-						App::mApp->mCommunicating2->Send(index+6, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1])));
-					}
-					else if(index == 2){
-						App::mApp->mCommunicating2->Send(index+6, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2])));
-					}
-					if(index == 2){
-						index = 0;
-					}
-					else{
-						index++;
-					}
-					Acknowledgement();
-				}
-				break;
-			case CMD::DEV4FB:
-				if(App::mApp->DeviceIndex == 4){
-					static int index = 0;
-					if(index == 0){
-						App::mApp->mCommunicating2->Send(index+9, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[0])));
-					}
-					else if(index == 1){
-						App::mApp->mCommunicating2->Send(index+9, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[1])));
-					}
-					else if(index == 2){
-						App::mApp->mCommunicating2->Send(index+9, (float)(MathTools::RadianToDegree(App::mApp->mQuaternion->getEuler()[2])));
-					}
-					if(index == 2){
-						index = 0;
-					}
-					else{
-						index++;
-					}
-					Acknowledgement();
-				}
-				break;
 
-		}
-	}
 
-/*
-	switch(255){
+	switch(cmd){
 
 		case CMD::WATCHDOG:
 			App::mApp->mControlling->clearWatchDogCount();
@@ -809,10 +674,6 @@ void Communicating::Execute(int cmd, float data){
 //			Acknowledgement();
 			break;
 	}
-//	if(App::mApp->mCommunicating2 == this){
-//		App::mApp->mUART4->Print("CMD:%d  DATA:%g\r\n", cmd, data);
-//		Acknowledgement();
-//	}*/
 }
 
 void Communicating::Acknowledgement(){

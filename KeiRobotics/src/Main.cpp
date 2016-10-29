@@ -10,6 +10,7 @@
 using namespace System;
 
 int main(){
+	__disable_irq();
 	App* app = new App();
 	return 0;
 }
